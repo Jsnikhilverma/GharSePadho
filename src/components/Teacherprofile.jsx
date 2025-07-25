@@ -1,35 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import BookingModal from '../components/BookingModal'; // Ensure this path is correct
+import BookingModal from '../components/BookingModal';
 
 const TutorProfile = () => {
   const { id } = useParams();
   const [tutor, setTutor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showBookingModal, setShowBookingModal] = useState(false); // State to control modal visibility
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const [bookingForm, setBookingForm] = useState({
     name: '',
     email: '',
     phone: '',
     date: '',
     time: '',
-    duration: '1', // Default to 1 hour
+    duration: '1',
     message: '',
   });
 
   useEffect(() => {
     const fetchTutorData = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:8080/tuition_api/api/teachers/get_by_id.php?id=${id}`);
-        const data = await response.json();
+        const response = await fetch('https://gharsepadho.com/gsp_api/public/index.php/get_teacher_details', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `teacher_id=${id}`
+        });
 
-        if (data.success) {
-          setTutor(data.data);
+        const data = await response.json();
+        console.log(data);
+
+        if (data.msg && Array.isArray(data.msg)) {
+          // Find the tutor with matching ID (ensure both are strings for comparison)
+          const foundTutor = data.msg.find(t => String(t.id) === String(id));
+          if (foundTutor) {
+            setTutor(foundTutor);
+          } else {
+            setTutor(null);
+            setError('Tutor not found');
+          }
         } else {
+          setTutor(null);
           setError('Failed to fetch tutor data');
         }
       } catch (err) {
+        setTutor(null);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -38,31 +55,6 @@ const TutorProfile = () => {
 
     fetchTutorData();
   }, [id]);
-
-  // Sample reviews data (you might want to fetch this from API as well)
-  // const reviews = [
-  //   {
-  //     id: 1,
-  //     student: "Rahul Mehta",
-  //     rating: 5,
-  //     date: "2 weeks ago",
-  //     comment: "Dr. Smith transformed my approach to physics. His explanations are crystal clear and he makes even the most complex topics manageable."
-  //   },
-  //   {
-  //     id: 2,
-  //     student: "Ananya Patel",
-  //     rating: 5,
-  //     date: "1 month ago",
-  //     comment: "Best math tutor I've ever had! My grades improved from 65% to 92% in just 3 months."
-  //   },
-  //   {
-  //     id: 3,
-  //     student: "Vikram Singh",
-  //     rating: 4,
-  //     date: "2 months ago",
-  //     comment: "Very knowledgeable and patient. The only reason I didn't give 5 stars is because his schedule is quite packed."
-  //   }
-  // ];
 
   const openBookingModal = () => setShowBookingModal(true);
   const closeBookingModal = () => setShowBookingModal(false);
@@ -77,7 +69,6 @@ const TutorProfile = () => {
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
-    // In a real application, you'd send this data to your backend API
     console.log('Booking submitted:', {
       tutorId: tutor.id,
       tutorName: tutor.name,
@@ -85,7 +76,6 @@ const TutorProfile = () => {
     });
     alert(`Booking request sent for ${tutor.name} on ${bookingForm.date} at ${bookingForm.time} for ${bookingForm.duration} hours.`);
     closeBookingModal();
-    // You might want to add success/error handling here
   };
 
   if (loading) {
@@ -152,46 +142,32 @@ const TutorProfile = () => {
             <div className="md:w-1/3 flex justify-center mb-8 md:mb-0">
               <div className="relative">
                 <img
-                  src={tutor.profile_pic || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80"}
-                  alt={tutor.name}
+                  src={tutor?.profile_img || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80"}
+                  alt={tutor?.name}
                   className="w-64 h-64 rounded-full object-cover border-4 border-white shadow-xl"
                 />
-                {/* <div className="absolute -bottom-2 -right-2 bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-full text-sm flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  4.9
-                </div> */}
               </div>
             </div>
             <div className="md:w-2/3 text-center md:text-left">
               <h1 className="text-4xl font-serif font-bold mb-2">{tutor.name}</h1>
-              <h2 className="text-2xl font-light mb-4">{tutor.subjects.join(', ')}</h2>
+              <h2 className="text-2xl font-light mb-4">{tutor.subjects || 'General Subjects'}</h2>
 
               <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-6">
                 <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  {tutor.experience}+ years Experience
+                  {tutor?.experience || 'Experienced'} Tutor
                 </div>
                 <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
-                  {tutor.address}
+                  {tutor?.mobile}
                 </div>
-                {/* <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  ₹{tutor.charge_hourly}/Month
-                </div> */}
               </div>
 
               <div className="flex justify-center md:justify-start space-x-4">
-                {/* Book Session button */}
                 <button
                   onClick={openBookingModal}
                   className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-lg shadow-md transition duration-300 flex items-center"
@@ -215,17 +191,26 @@ const TutorProfile = () => {
             {/* About Section */}
             <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
               <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">About {tutor.name}</h3>
-              <p className="text-gray-700 mb-6">{tutor.bio}</p>
+              <p className="text-gray-700 mb-6">
+                {tutor.name} is an experienced tutor with {tutor.experience || 'several years'} of teaching experience. 
+                {tutor.courses ? ` Specializing in ${tutor.courses}.` : ' Available for various subjects and courses.'}
+              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <h4 className="text-xl font-medium text-gray-900 mb-4">Subjects</h4>
                   <div className="flex flex-wrap gap-2">
-                    {tutor.subjects.map((subject, index) => (
-                      <span key={index} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
-                        {subject}
+                    {tutor.subjects ? (
+                      tutor.subjects.split(',').map((subject, index) => (
+                        <span key={index} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
+                          {subject.trim()}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
+                        General Subjects
                       </span>
-                    ))}
+                    )}
                   </div>
                 </div>
 
@@ -236,100 +221,34 @@ const TutorProfile = () => {
                       <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
-                      {tutor.mobile_no}
+                      {tutor.mobile}
                     </p>
                     <p className="flex items-start text-gray-700">
                       <svg className="w-5 h-5 text-gray-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                       </svg>
-                      {tutor.address}
+                      {tutor.email}
                     </p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Qualifications Section */}
+            {/* Experience Section */}
             <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-              <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Qualifications & Achievements</h3>
-
-              <h4 className="text-xl font-medium text-gray-900 mb-4">Education</h4>
-              <ul className="space-y-3 mb-6">
-                {tutor.qualifications.map((qualification, index) => (
-                  <li key={index} className="flex items-start">
-                    <svg className="w-5 h-5 text-indigo-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-gray-700">
-                      {qualification.qualification} from {qualification.institution} ({qualification.year})
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Experience</h3>
+              <p className="text-gray-700">
+                {tutor.name} has been teaching for {tutor.experience || 'several years'}, helping students achieve their academic goals.
+              </p>
             </div>
-
-            {/* Reviews Section */}
-          
           </div>
 
           {/* Right Column */}
           <div className="lg:w-1/3">
-            
-            {/* <div className="bg-white rounded-xl shadow-sm p-8 mb-8 sticky top-8">
-              <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Availability</h3>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Monday</span>
-                  <span className="text-gray-500">4:00 PM - 8:00 PM</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Wednesday</span>
-                  <span className="text-gray-500">4:00 PM - 8:00 PM</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Friday</span>
-                  <span className="text-gray-500">4:00 PM - 8:00 PM</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Saturday</span>
-                  <span className="text-gray-500">10:00 AM - 2:00 PM</span>
-                </div>
-              </div>
-
-              <button className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                Check Full Calendar
-              </button>
-
-              <div className="mt-8 pt-6 border-t border-gray-100">
-                <h4 className="text-lg font-medium text-gray-900 mb-4">Teaches</h4>
-                <div className="flex flex-wrap gap-2">
-                  {['Class 9', 'Class 10', 'Class 11', 'Class 12'].map((level, index) => (
-                    <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
-                      {level}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div> */}
-
-           
             <div className="bg-white rounded-xl shadow-sm p-8">
               <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Contact Tutor</h3>
 
               <div className="space-y-4">
-                {/* <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  Send Message
-                </button> */}
-
-                {/* Book Trial Session button */}
                 <button
                   onClick={openBookingModal}
                   className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center"
@@ -379,7 +298,7 @@ const TutorProfile = () => {
       {tutor && (
         <BookingModal
           showBookingModal={showBookingModal}
-          selectedTutor={tutor} // Pass the entire tutor object
+          selectedTutor={tutor}
           bookingForm={bookingForm}
           closeBookingModal={closeBookingModal}
           handleBookingSubmit={handleBookingSubmit}

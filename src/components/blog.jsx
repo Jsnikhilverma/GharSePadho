@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   BookmarkIcon,
   ClockIcon,
@@ -17,197 +17,73 @@ import {
   CubeIcon
 } from '@heroicons/react/24/outline';
 
-
 const EdutechBlogPlatform = () => {
   const [activeBlog, setActiveBlog] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
-  // Edutech blog data
-  const blogs = [
-    {
-      id: 1,
-      title: "Revolutionizing Education with AI-Powered Learning Systems",
-      excerpt: "Explore how artificial intelligence is transforming personalized learning and adaptive education platforms.",
-      author: "Dr. Sarah Chen",
-      date: "May 15, 2023",
-      readTime: "8 min read",
-      category: "Artificial Intelligence",
-      icon: <CpuChipIcon className="h-6 w-6 text-blue-500" />,
-      image: "/blog1.jpg",
-      content: `
-        <h2 class="text-2xl font-bold mb-6">The AI Education Revolution</h2>
-        <p class="mb-4">Artificial Intelligence is reshaping the educational landscape by enabling personalized learning experiences at scale. Modern AI systems can analyze student performance in real-time, adapting content delivery to match individual learning styles and paces.</p>
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch blogs from API
+  useEffect(() => {
+    const fetchBlogs = async () => {
+      try {
+        const response = await fetch('https://gharsepadho.com/gsp_api/public/index.php/get_blog_posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: 'page=1'
+        });
         
-        <div class="my-8 p-6 bg-blue-50 border-l-4 border-blue-400">
-          <p class="italic text-blue-800">"AI in education isn't about replacing teachers - it's about empowering them with tools to reach every student more effectively."</p>
-        </div>
+        if (!response.ok) {
+          throw new Error('Failed to fetch blogs');
+        }
         
-        <h3 class="text-xl font-bold mt-8 mb-4">Key Applications in Education</h3>
-        <ul class="list-disc pl-6 mb-6 space-y-2">
-          <li>Adaptive learning platforms that adjust difficulty in real-time</li>
-          <li>Intelligent tutoring systems with natural language processing</li>
-          <li>Automated grading and feedback for written assignments</li>
-          <li>Predictive analytics to identify at-risk students</li>
-          <li>Virtual reality simulations for immersive learning</li>
-        </ul>
-        
-        <img src="/ai-classroom.jpg" alt="AI in classroom" class="w-full h-auto my-8 rounded-lg" />
-        
-        <h3 class="text-xl font-bold mt-8 mb-4">Implementation Roadmap</h3>
-        <div class="grid md:grid-cols-2 gap-6 my-8">
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">Phase 1: Foundation</h4>
-            <p>Data collection infrastructure and basic analytics</p>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">Phase 2: Personalization</h4>
-            <p>Adaptive learning algorithms and recommendation engines</p>
-          </div>
-        </div>
-      `,
-      likes: 1243,
-      comments: 42,
-      isBookmarked: false,
-      isLiked: false
-    },
-    {
-      id: 2,
-      title: "Cybersecurity in Education: Protecting Digital Learning Environments",
-      excerpt: "Essential strategies for securing educational institutions against growing digital threats.",
-      author: "Mark Johnson",
-      date: "June 2, 2023",
-      readTime: "12 min read",
-      category: "Cybersecurity",
-      icon: <ShieldCheckIcon className="h-6 w-6 text-green-500" />,
-      image: "/cybersecurity.jpeg",
-      content: `
-        <h2 class="text-2xl font-bold mb-6">The Growing Threat Landscape</h2>
-        <p class="mb-4">Educational institutions have become prime targets for cyberattacks, with sensitive student data and often underprotected networks. The shift to remote learning has expanded the attack surface, requiring new security paradigms.</p>
-        
-        <img src="/cyber-threats.jpg" alt="Cybersecurity threats" class="w-full h-auto my-8 rounded-lg" />
-        
-        <h3 class="text-xl font-bold mt-8 mb-4">Critical Security Measures</h3>
-        
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-              <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Area</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Solution</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Implementation</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-              <tr>
-                <td class="px-6 py-4 whitespace-nowrap font-medium">Network Security</td>
-                <td class="px-6 py-4 whitespace-nowrap">Zero Trust Architecture</td>
-                <td class="px-6 py-4">Require verification for all users and devices</td>
-              </tr>
-              <tr>
-                <td class="px-6 py-4 whitespace-nowrap font-medium">Data Protection</td>
-                <td class="px-6 py-4 whitespace-nowrap">End-to-End Encryption</td>
-                <td class="px-6 py-4">Protect data in transit and at rest</td>
-              </tr>
-              <tr>
-                <td class="px-6 py-4 whitespace-nowrap font-medium">Access Control</td>
-                <td class="px-6 py-4 whitespace-nowrap">Multi-Factor Authentication</td>
-                <td class="px-6 py-4">Implement across all systems</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      `,
-      likes: 892,
-      comments: 31,
-      isBookmarked: false,
-      isLiked: false
-    },
-    {
-      id: 3,
-      title: "IoT in Smart Classrooms: Creating Connected Learning Experiences",
-      excerpt: "How Internet of Things technology is enabling interactive and data-driven educational environments.",
-      author: "Priya Patel",
-      date: "June 10, 2023",
-      readTime: "15 min read",
-      category: "IoT",
-      icon: <CubeIcon className="h-6 w-6 text-purple-500" />,
-      image: "/iolab.jpg",
-      content: `
-        <h2 class="text-2xl font-bold mb-6">The Connected Classroom</h2>
-        <p class="mb-4">IoT technology transforms physical learning spaces into interactive, responsive environments that enhance engagement and provide valuable usage analytics. From smart whiteboards to environmental sensors, connected devices are redefining the classroom experience.</p>
-        
-        <div class="my-8 p-6 bg-purple-50 border-l-4 border-purple-400">
-          <p class="italic text-purple-800">"IoT in education goes beyond gadgets - it creates ecosystems where physical and digital learning tools work in harmony."</p>
-        </div>
-        
-        <h3 class="text-xl font-bold mt-8 mb-4">Key IoT Applications</h3>
-        
-        <div class="grid md:grid-cols-3 gap-6 my-8">
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">1. Attendance Tracking</h4>
-            <p>RFID tags automate attendance and location monitoring</p>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">2. Environmental Control</h4>
-            <p>Smart sensors optimize lighting, temperature, and air quality</p>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">3. Equipment Monitoring</h4>
-            <p>Track usage and maintenance needs of educational devices</p>
-          </div>
-        </div>
-        
-        <img src="/iot-devices.jpg" alt="IoT devices in classroom" class="w-full h-auto my-8 rounded-lg" />
-      `,
-      likes: 1567,
-      comments: 87,
-      isBookmarked: false,
-      isLiked: false
-    },
-    {
-      id: 4,
-      title: "Blockchain for Academic Credentials: Ending Degree Fraud",
-      excerpt: "How decentralized ledger technology is bringing transparency and security to educational certifications.",
-      author: "David Zhang",
-      date: "June 18, 2023",
-      readTime: "10 min read",
-      category: "Blockchain",
-      icon: <CubeIcon className="h-6 w-6 text-amber-500" />,
-      image: "/blockchain.jpg",
-      content: `
-        <h2 class="text-2xl font-bold mb-6">The Trust Problem in Academic Credentials</h2>
-        <p class="mb-4">With increasing cases of degree fraud and credential misrepresentation, blockchain technology offers an immutable, verifiable solution for academic records. Institutions worldwide are adopting decentralized systems to issue and verify qualifications.</p>
-        
-        <h3 class="text-xl font-bold mt-8 mb-4">Blockchain Benefits</h3>
-        <ul class="list-disc pl-6 mb-6 space-y-2">
-          <li>Tamper-proof record of academic achievements</li>
-          <li>Instant verification by employers</li>
-          <li>Reduced administrative overhead</li>
-          <li>Global standardization of credentials</li>
-          <li>Student ownership of academic records</li>
-        </ul>
-        
-        <img src="/blockchain-diploma.jpg" alt="Blockchain diploma" class="w-full h-auto my-8 rounded-lg" />
-        
-        <h3 class="text-xl font-bold mt-8 mb-4">Implementation Examples</h3>
-        <div class="grid md:grid-cols-2 gap-6 my-8">
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">MIT Digital Diplomas</h4>
-            <p>Pioneering blockchain-based credentialing since 2017</p>
-          </div>
-          <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-            <h4 class="font-bold mb-2">European Qualifications Passport</h4>
-            <p>Cross-border credential verification system</p>
-          </div>
-        </div>
-      `,
-      likes: 1120,
-      comments: 56,
-      isBookmarked: false,
-      isLiked: false
-    }
-  ];
+        const data = await response.json();
+        if (data.status === 200) {
+          // Transform API data to match our expected format
+          const formattedBlogs = data.msg.map((blog, index) => ({
+            id: blog.id,
+            title: blog.title,
+            excerpt: blog.description.length > 150 
+              ? `${blog.description.substring(0, 150)}...` 
+              : blog.description,
+            author: "Admin", // Default author since API doesn't provide
+            date: new Date(blog.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            }),
+            readTime: `${Math.ceil(blog.description.length / 500)} min read`,
+            category: "Education", // Default category
+            icon: <AcademicCapIcon className="h-6 w-6 text-blue-500" />,
+            image: blog.blog_img,
+            content: `
+              <h2 class="text-2xl font-bold mb-6">${blog.title}</h2>
+              <img src="${blog.blog_img}" alt="${blog.title}" class="w-full h-auto my-8 rounded-lg" />
+              <p class="mb-4">${blog.description.replace(/\n/g, '</p><p class="mb-4">')}</p>
+            `,
+            likes: Math.floor(Math.random() * 1000),
+            comments: Math.floor(Math.random() * 100),
+            isBookmarked: false,
+            isLiked: false
+          }));
+          
+          setBlogs(formattedBlogs);
+        } else {
+          throw new Error(data.msg || 'Failed to fetch blogs');
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBlogs();
+  }, []);
 
   // Filter blogs based on search query
   const filteredBlogs = blogs.filter(blog =>
@@ -236,7 +112,7 @@ const EdutechBlogPlatform = () => {
       }
       return blog;
     });
-    // In a real app, you would update your state management here
+    setBlogs(updatedBlogs);
   };
 
   // Toggle bookmark status
@@ -257,38 +133,46 @@ const EdutechBlogPlatform = () => {
       }
       return blog;
     });
-    // In a real app, you would update your state management here
+    setBlogs(updatedBlogs);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading blogs...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center p-6 bg-white rounded-lg shadow-md max-w-md">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading blogs</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Category Filters */}
-        {/* <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Explore Learning Technologies</h2>
-          <div className="flex flex-wrap gap-3">
-            <button className="flex items-center px-4 py-2 rounded-full bg-blue-100 text-blue-800">
-              <CpuChipIcon className="h-5 w-5 mr-2" />
-              AI & Machine Learning
-            </button>
-            <button className="flex items-center px-4 py-2 rounded-full bg-green-100 text-green-800">
-              <ShieldCheckIcon className="h-5 w-5 mr-2" />
-              Cybersecurity
-            </button>
-            <button className="flex items-center px-4 py-2 rounded-full bg-purple-100 text-purple-800">
-              <CubeIcon className="h-5 w-5 mr-2" />
-              IoT
-            </button>
-            <button className="flex items-center px-4 py-2 rounded-full bg-amber-100 text-amber-800">
-              <CubeIcon className="h-5 w-5 mr-2" />
-              Blockchain
-            </button>
-          </div>
-        </div> */}
-
         {activeBlog ? (
           // Single Blog View
           <div className="bg-white shadow-xl rounded-lg overflow-hidden">
@@ -419,7 +303,7 @@ const EdutechBlogPlatform = () => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Latest Articles</h2>
               <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-                {filteredBlogs.slice(1).map((blog) => (
+                {filteredBlogs.map((blog) => (
                   <div key={blog.id} className="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300">
                     <img 
                       src={blog.image} 
@@ -461,9 +345,6 @@ const EdutechBlogPlatform = () => {
           </div>
         )}
       </main>
-
-      {/* Footer */}
-    
     </div>
   );
 };

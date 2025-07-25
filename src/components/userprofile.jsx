@@ -41,15 +41,27 @@ const UserProfile = () => {
     const fetchUserData = async () => {
       try {
           const token = Cookies.get('token');
-         const userId = Cookies.get('id');
+        //  const userId = Cookies.get('id');
 
     
+    // Get userId from token
+    const userId ="all";
 
-        const response = await axios.get(`http://127.0.0.1:8080/tuition_api/api/teachers/get_by_id.php?id=${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+    // If userId is not found, throw error
+    if (!userId) {
+      throw new Error('User ID not found in token');
+    }
+
+    // Fetch teacher details using teacher_id
+    const response = await axios.post(
+      'https://gharsepadho.com/gsp_api/public/index.php/get_teacher_details',
+      { teacher_id: userId },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    );
         
         if (!response.data || !response.data.data) {
           throw new Error('Invalid response structure from server');

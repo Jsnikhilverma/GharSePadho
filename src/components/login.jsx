@@ -7,7 +7,7 @@ import Cookies from 'js-cookie';
 const Login = () => {
   const [activeTab, setActiveTab] = useState('student');
   const [formData, setFormData] = useState({
-    email: '',
+    emailOrMobile: '',
     password: '',
     userType: 'student',
     rememberMe: false
@@ -25,50 +25,56 @@ const Login = () => {
     if (error) setError('');
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setLoading(true);
+  setError('');
 
-    try {
-      const { email, password, userType } = formData;
-      const endpoint = userType === 'student'
-        ? 'http://127.0.0.1:8080/tuition_api/api/auth/login_student.php'
-        : 'http://127.0.0.1:8080/tuition_api/api/auth/login_teacher.php';
+  try {
+    const { emailOrMobile, password, userType, rememberMe } = formData; // Use formData, not formData2
+    const endpoint = userType === 'student'
+      ? `${import.meta.env.VITE_BASE_URL}/public/index.php/student_login`
+      : `${import.meta.env.VITE_BASE_URL}/public/index.php/teacher_login`;
 
-      const response = await axios.post(endpoint, { email, password }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+    const requestData = new FormData();
+    requestData.append('email', emailOrMobile);
+    requestData.append('password', password);
 
-      if (response.data.message === 'Login successful') {
-        const { token, user } = response.data;
+    const response = await axios.post(endpoint, requestData);
 
-        // Save token and user data in cookies
-        Cookies.set('token', token, { expires: formData.rememberMe ? 7 : undefined });
-        Cookies.set('userId', user.id, { expires: formData.rememberMe ? 7 : undefined });
-        Cookies.set('userType', userType, { expires: formData.rememberMe ? 7 : undefined });
+    if (response.data.status === 200) {
+      const userData = response.data.msg;
+      const token = userData.secure_token;
 
-        // Redirect to profile page after login and then refresh
-        navigate('/profile');
-        window.location.reload();
-      } else {
-        setError(response.data.message || 'Login failed. Please try again.');
+      // Save token and user data in cookies
+      Cookies.set('token', token, { expires: rememberMe ? 7 : undefined });
+      Cookies.set('userId', userData.id, { expires: rememberMe ? 7 : undefined });
+      Cookies.set('userType', userType, { expires: rememberMe ? 7 : undefined });
+      Cookies.set('userName', userData.name, { expires: rememberMe ? 7 : undefined });
+      
+      if (userType === 'teacher') {
+        Cookies.set('profileImg', userData.profile_img || '', { expires: rememberMe ? 7 : undefined });
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      if (err.response) {
-        setError(err.response.data.message || 'Login failed. Please check your credentials.');
-      } else if (err.request) {
-        setError('Network error. Please check your connection.');
-      } else {
-        setError('An unexpected error occurred. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+
+      // Redirect to profile page after login and then refresh
+      navigate('/profile');
+      window.location.reload();
+    } else {
+      setError(response.data.message || 'Login failed. Please try again.');
     }
-  };
+  } catch (err) {
+    console.error('Login error:', err);
+    if (err.response) {
+      setError(err.response.data.message || 'Login failed. Please check your credentials.');
+    } else if (err.request) {
+      setError('Network error. Please check your connection.');
+    } else {
+      setError('An unexpected error occurred. Please try again.');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -117,18 +123,18 @@ const Login = () => {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address <span className="text-red-500">*</span>
+                <label htmlFor="emailOrMobile" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email or Mobile <span className="text-red-500">*</span>
                 </label>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  value={formData.email}
+                  type="text"
+                  id="emailOrMobile"
+                  name="emailOrMobile"
+                  value={formData.emailOrMobile}
                   onChange={handleChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
-                  placeholder="Enter your email"
+                  placeholder="Enter your email or mobile number"
                 />
               </div>
 

@@ -7,89 +7,18 @@ const Register = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    mobile: '',
     password: '',
     confirmPassword: '',
-    userType: 'student',
-    phone: '',
-    subjects: [],
-    educationLevel: '',
-    bio: '',
-    experience: '',
-    address: '',
-    chargeHourly: '',
-    qualifications: [{ qualification: '', institution: '', year: '' }]
+    userType: 'student'
   });
-  const [subjectInput, setSubjectInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    if (type === 'checkbox') {
-      // Handle subjects checkbox
-      let updatedSubjects = [...formData.subjects];
-      if (checked) {
-        updatedSubjects.push(value);
-      } else {
-        updatedSubjects = updatedSubjects.filter(subject => subject !== value);
-      }
-      setFormData({...formData, subjects: updatedSubjects});
-    } else {
-      setFormData({...formData, [name]: value});
-    }
-  };
-
-  const handleQualificationChange = (index, e) => {
     const { name, value } = e.target;
-    const updatedQualifications = [...formData.qualifications];
-    updatedQualifications[index] = {
-      ...updatedQualifications[index],
-      [name]: value
-    };
-    setFormData({
-      ...formData,
-      qualifications: updatedQualifications
-    });
-  };
-
-  const addQualification = () => {
-    setFormData({
-      ...formData,
-      qualifications: [...formData.qualifications, { qualification: '', institution: '', year: '' }]
-    });
-  };
-
-  const removeQualification = (index) => {
-    const updatedQualifications = [...formData.qualifications];
-    updatedQualifications.splice(index, 1);
-    setFormData({
-      ...formData,
-      qualifications: updatedQualifications
-    });
-  };
-
-  const handleSubjectInput = (e) => {
-    setSubjectInput(e.target.value);
-  };
-
-  const addSubject = (e) => {
-    e.preventDefault();
-    if (subjectInput.trim() && !formData.subjects.includes(subjectInput.trim())) {
-      setFormData({
-        ...formData,
-        subjects: [...formData.subjects, subjectInput.trim()]
-      });
-      setSubjectInput('');
-    }
-  };
-
-  const removeSubject = (subjectToRemove) => {
-    setFormData({
-      ...formData,
-      subjects: formData.subjects.filter(subject => subject !== subjectToRemove)
-    });
+    setFormData({...formData, [name]: value});
   };
 
   const handleSubmit = async (e) => {
@@ -107,17 +36,16 @@ const Register = () => {
     try {
       if (activeTab === 'student') {
         // Student registration
-        const response = await fetch('http://127.0.0.1:8080/tuition_api/api/auth/register_student.php', {
+        const response = await fetch(`${import.meta.env.VITE_BASE_URL}/public/index.php/student_signup`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: JSON.stringify({
+          body: new URLSearchParams({
             name: formData.name,
             email: formData.email,
-            mobile_no: formData.phone,
-            password: formData.password,
-            education_level: formData.educationLevel
+            mobile: formData.mobile,
+            password: formData.password
           }),
         });
 
@@ -127,28 +55,20 @@ const Register = () => {
           throw new Error(data.message || 'Student registration failed');
         }
 
-        // Redirect to login or dashboard after successful registration
+        // Redirect to login after successful registration
         navigate('/login', { state: { registrationSuccess: true } });
       } else {
         // Teacher registration
-        const response = await fetch('http://127.0.0.1:8080/tuition_api/api/auth/register_teacher.php', {
+        const response = await fetch(`${import.meta.env.VITE_BASE_URL}/public/index.php/teacher_signup_api`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
           },
-          body: JSON.stringify({
+          body: new URLSearchParams({
             name: formData.name,
             email: formData.email,
-            mobile_no: formData.phone,
-            password: formData.password,
-            address: formData.address,
-            experience: parseInt(formData.experience.split('-')[0]), // Extract years from "1-3" format
-            charge_hourly: parseFloat(formData.chargeHourly),
-            bio: formData.bio,
-            subjects: formData.subjects,
-            qualifications: formData.qualifications.filter(q => 
-              q.qualification && q.institution && q.year
-            )
+            mobile: formData.mobile,
+            password: formData.password
           }),
         });
 
@@ -158,7 +78,7 @@ const Register = () => {
           throw new Error(data.message || 'Teacher registration failed');
         }
 
-        // Redirect to login or dashboard after successful registration
+        // Redirect to login after successful registration
         navigate('/login', { state: { registrationSuccess: true } });
       }
     } catch (err) {
@@ -169,19 +89,13 @@ const Register = () => {
     }
   };
 
-  const subjectOptions = [
-    'Mathematics', 'Physics', 'Chemistry', 'Biology',
-    'English', 'History', 'Geography', 'Computer Science',
-    'Economics', 'Business Studies', 'Psychology', 'Art'
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="w-full max-w-4xl">
         {/* Logo/Header */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <Link to="/" className="inline-block">
-            <h1 className="text-3xl font-serif font-bold text-gray-900">
+            <h1 className="text-4xl font-serif font-bold text-gray-900">
               GharSe<span className="text-blue-600">Padho</span>
             </h1>
           </Link>
@@ -191,7 +105,7 @@ const Register = () => {
         </div>
 
         {/* Registration Card */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="bg-white rounded-xl shadow-xl overflow-hidden">
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-200">
             <button
@@ -223,15 +137,15 @@ const Register = () => {
           {/* Form Content */}
           <div className="p-8 sm:p-10">
             {error && (
-              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700 rounded">
                 <p>{error}</p>
               </div>
             )}
             
             <form onSubmit={handleSubmit}>
-              {/* Common Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                <div>
+                {/* Name Field */}
+                <div className="md:col-span-2">
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                     Full Name <span className="text-red-500">*</span>
                   </label>
@@ -254,6 +168,7 @@ const Register = () => {
                   </div>
                 </div>
 
+                {/* Email Field */}
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                     Email Address <span className="text-red-500">*</span>
@@ -277,6 +192,31 @@ const Register = () => {
                   </div>
                 </div>
 
+                {/* Mobile Field */}
+                <div>
+                  <label htmlFor="mobile" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mobile Number <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="tel"
+                      id="mobile"
+                      name="mobile"
+                      value={formData.mobile}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
+                      placeholder="Enter your mobile number"
+                    />
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                      <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Password Field */}
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                     Password <span className="text-red-500">*</span>
@@ -301,6 +241,7 @@ const Register = () => {
                   </div>
                 </div>
 
+                {/* Confirm Password Field */}
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                     Confirm Password <span className="text-red-500">*</span>
@@ -326,299 +267,12 @@ const Register = () => {
                 </div>
               </div>
 
-              {/* Phone Number (Common) */}
-              <div className="mb-8">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                    placeholder="Enter your phone number with country code"
-                  />
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Student-Specific Fields */}
-              {activeTab === 'student' && (
-                <div className="mb-8">
-                  <label htmlFor="educationLevel" className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Education Level <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    id="educationLevel"
-                    name="educationLevel"
-                    value={formData.educationLevel}
-                    onChange={handleChange}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                  >
-                    <option value="">Select your education level</option>
-                    <option value="Primary School">Primary School</option>
-                    <option value="Middle School">Middle School</option>
-                    <option value="High School">High School</option>
-                    <option value="Undergraduate">Undergraduate</option>
-                    <option value="Graduate">Graduate</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-              )}
-
-              {/* Teacher-Specific Fields */}
-              {activeTab === 'teacher' && (
-                <>
-                  <div className="mb-8">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Subjects You Teach <span className="text-red-500">*</span>
-                    </label>
-                    
-                    {/* Subject input and add button */}
-                    <div className="flex mb-4">
-                      <input
-                        type="text"
-                        value={subjectInput}
-                        onChange={handleSubjectInput}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                        placeholder="Add a subject (e.g. Mathematics)"
-                      />
-                      <button
-                        type="button"
-                        onClick={addSubject}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
-                      >
-                        Add
-                      </button>
-                    </div>
-                    
-                    {/* Selected subjects display */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {formData.subjects.map((subject) => (
-                        <div key={subject} className="flex items-center bg-blue-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
-                          {subject}
-                          <button
-                            type="button"
-                            onClick={() => removeSubject(subject)}
-                            className="ml-2 text-indigo-600 hover:text-indigo-900 focus:outline-none"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    
-                    {/* Predefined subject options */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {subjectOptions.map((subject) => (
-                        <div key={subject} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id={`subject-${subject}`}
-                            name="subjects"
-                            value={subject}
-                            checked={formData.subjects.includes(subject)}
-                            onChange={handleChange}
-                            className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                          />
-                          <label htmlFor={`subject-${subject}`} className="ml-2 text-sm text-gray-700">
-                            {subject}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div>
-                      <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-1">
-                        Years of Teaching Experience <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="experience"
-                        name="experience"
-                        value={formData.experience}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
-                      >
-                        <option value="">Select years of experience</option>
-                        <option value="0-1">0-1 years</option>
-                        <option value="1-3">1-3 years</option>
-                        <option value="3-5">3-5 years</option>
-                        <option value="5-10">5-10 years</option>
-                        <option value="10+">10+ years</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="chargeHourly" className="block text-sm font-medium text-gray-700 mb-1">
-                        Hourly Charge (₹) <span className="text-red-500">*</span>
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="number"
-                          id="chargeHourly"
-                          name="chargeHourly"
-                          value={formData.chargeHourly}
-                          onChange={handleChange}
-                          required
-                          min="0"
-                          step="50"
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
-                          placeholder="Your hourly rate"
-                        />
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                          <span className="text-gray-500">₹</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mb-8">
-                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                      Address <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
-                      placeholder="Your full address"
-                    />
-                  </div>
-
-                  <div className="mb-8">
-                    <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
-                      Professional Bio <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      id="bio"
-                      name="bio"
-                      value={formData.bio}
-                      onChange={handleChange}
-                      required
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                      placeholder="Tell us about your teaching experience, methodology, and specialties"
-                    />
-                  </div>
-
-                  <div className="mb-8">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Qualifications <span className="text-red-500">*</span>
-                    </label>
-                    
-                    {formData.qualifications.map((qual, index) => (
-                      <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div>
-                          <label htmlFor={`qualification-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                            Qualification
-                          </label>
-                          <input
-                            type="text"
-                            id={`qualification-${index}`}
-                            name="qualification"
-                            value={qual.qualification}
-                            onChange={(e) => handleQualificationChange(index, e)}
-                            required={index === 0}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                            placeholder="Degree/Certification"
-                          />
-                        </div>
-                        <div>
-                          <label htmlFor={`institution-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                            Institution
-                          </label>
-                          <input
-                            type="text"
-                            id={`institution-${index}`}
-                            name="institution"
-                            value={qual.institution}
-                            onChange={(e) => handleQualificationChange(index, e)}
-                            required={index === 0}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                            placeholder="University/School"
-                          />
-                        </div>
-                        <div className="flex items-end space-x-2">
-                          <div className="flex-1">
-                            <label htmlFor={`year-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
-                              Year
-                            </label>
-                            <input
-                              type="number"
-                              id={`year-${index}`}
-                              name="year"
-                              value={qual.year}
-                              onChange={(e) => handleQualificationChange(index, e)}
-                              required={index === 0}
-                              min="1900"
-                              max={new Date().getFullYear()}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
-                              placeholder="Year"
-                            />
-                          </div>
-                          {index > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => removeQualification(index)}
-                              className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-300"
-                            >
-                              ×
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <button
-                      type="button"
-                      onClick={addQualification}
-                      className="mt-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-300"
-                    >
-                      + Add Another Qualification
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {/* Terms and Conditions */}
-              {/* <div className="flex items-start mb-8">
-                <div className="flex items-center h-5">
-                  <input
-                    id="terms"
-                    name="terms"
-                    type="checkbox"
-                    required
-                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="terms" className="font-medium text-gray-700">
-                    I agree to the <a href="#" className="text-blue-600 hover:text-blue-500">Terms of Service</a> and <a href="#" className="text-blue-600 hover:text-blue-500">Privacy Policy</a>
-                  </label>
-                </div>
-              </div> */}
-
               {/* Submit Button */}
-              <div>
+              <div className="md:col-span-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {loading ? (
                     <>
@@ -644,7 +298,7 @@ const Register = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 transition duration-300">
                   Sign in
                 </Link>
               </p>
