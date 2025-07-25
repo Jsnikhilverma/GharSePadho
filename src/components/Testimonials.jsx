@@ -33,7 +33,7 @@ const Testimonials = () => {
     <div className="py-16 bg-blue-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="text-3xl font-serif font-bold text-dark">Success Stories</h2>
+          <h2 className="text-3xl font-serif  font-bold text-blue-600">Success Stories</h2>
           <p className="mt-4 max-w-2xl text-xl text-gray-500 mx-auto">
             What our students and parents say about us
           </p>

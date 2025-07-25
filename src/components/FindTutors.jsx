@@ -1,16 +1,19 @@
 // src/pages/FindTutors.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 const FindTutors = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const subjectParam = searchParams.get('subject'); // Fixed: get 'subject' parameter
+
   const [filters, setFilters] = useState({
     name: '',
     classLevel: '',
     location: '',
     minPrice: '',
     maxPrice: '',
-    subject: '',
+    subject: subjectParam || '', // Initialize with subjectParam or empty string
     sortBy: 'rating'
   });
 
@@ -26,70 +29,69 @@ const FindTutors = () => {
     message: ''
   });
 
-  // Sample tutor data with enhanced details
-  const allTutors = [
-    {
-      id: 1,
-      name: "Dr. Priya Sharma",
-      subject: "Mathematics",
-      classLevels: ["Class 9", "Class 10", "Class 11", "Class 12"],
-      location: "Central District",
-      price: 800,
-      rating: 4.9,
-      experience: "10+ years",
-      education: "PhD in Mathematics, IIT Delhi",
-      languages: ["English", "Hindi", "Bengali"],
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      badge: "Top Rated",
-      students: 245,
-      responseTime: "1 hour",
-      methodology: "Conceptual understanding with real-world applications"
-    },
-    {
-      id: 2,
-      name: "Rahul Verma",
-      subject: "Physics",
-      classLevels: ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"],
-      location: "North District",
-      price: 650,
-      rating: 4.8,
-      experience: "7 years",
-      education: "MSc Physics, University of Delhi",
-      languages: ["English", "Hindi"],
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      badge: "Popular",
-      students: 178,
-      responseTime: "2 hours",
-      methodology: "Interactive problem-solving approach"
-    },
-    {
-      id: 3,
-      name: "Ananya Patel",
-      subject: "English",
-      classLevels: ["Class 1", "Class 2", "Class 3", "Class 4", "Class 5", "Class 6", "Class 7", "Class 8"],
-      location: "South District",
-      price: 550,
-      rating: 4.7,
-      experience: "5 years",
-      education: "MA English, JNU",
-      languages: ["English", "Hindi", "Gujarati"],
-      image: "https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-      badge: "Fast Responder",
-      students: 132,
-      responseTime: "30 minutes",
-      methodology: "Communicative language teaching"
-    }
-  ];
+  const [tutors, setTutors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Filter tutors based on filters
-  const filteredTutors = allTutors.filter(tutor => {
+  // Fetch tutors based on filters
+  useEffect(() => {
+    const fetchTutors = async () => {
+      try {
+        setLoading(true);
+        let url = 'http://127.0.0.1:8080/tuition_api/api/teachers/get_all.php';
+        
+        if (filters.subject) {
+          url = `http://127.0.0.1:8080/tuition_api/api/teachers/get_by_subject.php?subject=${encodeURIComponent(filters.subject)}`;
+        }
+
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        
+        // Handle different response structures
+        if (filters.subject) {
+          setTutors(data.data || []);
+        } else {
+          setTutors(data || []);
+        }
+        
+        setError(null);
+      } catch (err) {
+        setError(err.message);
+        setTutors([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTutors();
+  }, [filters.subject]);
+
+  // Update filters when subjectParam changes
+  useEffect(() => {
+    if (subjectParam) {
+      setFilters(prev => ({
+        ...prev,
+        subject: subjectParam
+      }));
+    }
+  }, [subjectParam]);
+
+  // Filter tutors based on other filters (name, price, etc.)
+  const filteredTutors = tutors.filter(tutor => {
     return (
       (filters.name === '' || tutor.name.toLowerCase().includes(filters.name.toLowerCase())) &&
-      (filters.classLevel === '' || tutor.classLevels.includes(filters.classLevel)) &&
-      (filters.location === '' || tutor.location.toLowerCase().includes(filters.location.toLowerCase())) &&
-      (filters.minPrice === '' || tutor.price >= parseInt(filters.minPrice)) &&
-      (filters.maxPrice === '' || tutor.price <= parseInt(filters.maxPrice)) &&
-      (filters.subject === '' || tutor.subject.toLowerCase().includes(filters.subject.toLowerCase()))
+      (filters.minPrice === '' || parseFloat(tutor.charge_hourly) >= parseFloat(filters.minPrice)) &&
+      (filters.maxPrice === '' || parseFloat(tutor.charge_hourly) <= parseFloat(filters.maxPrice))
     );
   });
 
@@ -97,14 +99,15 @@ const FindTutors = () => {
   const sortedTutors = [...filteredTutors].sort((a, b) => {
     switch(filters.sortBy) {
       case 'priceLowHigh':
-        return a.price - b.price;
+        return parseFloat(a.charge_hourly) - parseFloat(b.charge_hourly);
       case 'priceHighLow':
-        return b.price - a.price;
+        return parseFloat(b.charge_hourly) - parseFloat(a.charge_hourly);
       case 'experience':
-        return parseInt(b.experience) - parseInt(a.experience);
+        return b.experience - a.experience;
       case 'rating':
       default:
-        return b.rating - a.rating;
+        // Since your API doesn't have rating, we'll sort by experience as default
+        return b.experience - a.experience;
     }
   });
 
@@ -123,13 +126,13 @@ const FindTutors = () => {
       location: '',
       minPrice: '',
       maxPrice: '',
-      subject: '',
+      subject: subjectParam || '', // Keep the subject from URL param when resetting
       sortBy: 'rating'
     });
   };
 
   const viewProfile = (id) => {
-    navigate(`/teacherprofile`);
+    navigate(`/teacherprofile/${id}`);
   };
 
   const openBookingModal = (tutor) => {
@@ -173,18 +176,18 @@ const FindTutors = () => {
     alert('Booking request submitted successfully!');
   };
 
-  // Get badge color based on type
-  const getBadgeColor = (badge) => {
-    switch(badge) {
-      case 'Top Rated':
-        return 'bg-amber-100 text-amber-800';
-      case 'Popular':
-        return 'bg-rose-100 text-rose-800';
-      case 'Fast Responder':
-        return 'bg-emerald-100 text-emerald-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  // Get badge color based on experience
+  const getBadgeColor = (experience) => {
+    if (experience >= 10) return 'bg-amber-100 text-amber-800';
+    if (experience >= 5) return 'bg-rose-100 text-rose-800';
+    return 'bg-emerald-100 text-emerald-800';
+  };
+
+  // Get badge text based on experience
+  const getBadgeText = (experience) => {
+    if (experience >= 10) return 'Expert';
+    if (experience >= 5) return 'Experienced';
+    return 'Fast Learner';
   };
 
   return (
@@ -196,10 +199,10 @@ const FindTutors = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-32 relative z-10">
             <div className="text-center">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif font-bold text-white mb-6">
-                Discover Exceptional Tutors
+                {filters.subject ? `${filters.subject} Tutors` : 'Discover Exceptional Tutors'}
               </h1>
               <p className="text-xl text-gray-200 max-w-3xl mx-auto">
-                Connect with vetted experts who inspire and transform learning experiences
+                {filters.subject ? `Find the best ${filters.subject} tutors for your needs` : 'Connect with vetted experts who inspire and transform learning experiences'}
               </p>
             </div>
           </div>
@@ -212,7 +215,7 @@ const FindTutors = () => {
               {/* Name Filter */}
               <div>
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                  Tuitor Name
+                  Tutor Name
                 </label>
                 <input
                   type="text"
@@ -239,41 +242,8 @@ const FindTutors = () => {
                 />
               </div>
 
-              {/* Class Level Filter */}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                  Class Level
-                </label>
-                <select
-                  name="classLevel"
-                  value={filters.classLevel}
-                  onChange={handleFilterChange}
-                  className="w-full px-3 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 text-gray-700 bg-white"
-                >
-                  <option value="">All Levels</option>
-                  {['Class 1', 'Class 2', 'Class 3', 'Class 4', 'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10', 'Class 11', 'Class 12', 'College'].map(level => (
-                    <option key={level} value={level}>{level}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Location Filter */}
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
-                  Location
-                </label>
-                <input
-                  type="text"
-                  name="location"
-                  value={filters.location}
-                  onChange={handleFilterChange}
-                  placeholder="Any location"
-                  className="w-full px-3 py-2 border-b border-gray-300 focus:outline-none focus:border-blue-500 text-gray-700 placeholder-gray-400"
-                />
-              </div>
-
               {/* Price Range Filter */}
-              {/* <div className="md:col-span-2">
+              <div className="md:col-span-2">
                 <label className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
                   Price Range (₹/hr)
                 </label>
@@ -301,7 +271,7 @@ const FindTutors = () => {
                     Clear All
                   </button>
                 </div>
-              </div> */}
+              </div>
             </div>
           </div>
 
@@ -309,10 +279,10 @@ const FindTutors = () => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
             <div className="mb-4 md:mb-0">
               <h2 className="text-2xl font-serif font-bold text-gray-900">
-                Available Tutors
+                {filters.subject ? `${filters.subject} Tutors` : 'Available Tutors'}
               </h2>
               <p className="text-gray-500">
-                {sortedTutors.length} {sortedTutors.length === 1 ? 'tutor' : 'tutors'} found
+                {loading ? 'Loading...' : `${sortedTutors.length} ${sortedTutors.length === 1 ? 'tutor' : 'tutors'} found`}
               </p>
             </div>
             <div className="flex items-center">
@@ -323,7 +293,7 @@ const FindTutors = () => {
                 onChange={handleFilterChange}
                 className="border-0 text-sm font-medium text-blue-600 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="rating">Highest Rating</option>
+                <option value="rating">Experience (High to Low)</option>
                 <option value="priceLowHigh">Price: Low to High</option>
                 <option value="priceHighLow">Price: High to Low</option>
                 <option value="experience">Most Experience</option>
@@ -331,24 +301,58 @@ const FindTutors = () => {
             </div>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">Loading Tutors</h3>
+              <p className="mt-1 text-gray-500">Please wait while we fetch the best tutors for you.</p>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && !loading && (
+            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+              <svg className="mx-auto h-12 w-12 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <h3 className="mt-2 text-lg font-medium text-gray-900">Error Loading Tutors</h3>
+              <p className="mt-1 text-gray-500">{error}</p>
+              <div className="mt-6">
+                <button
+                  onClick={() => window.location.reload()}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition duration-200"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Tutors Grid */}
-          {sortedTutors.length > 0 ? (
+          {!loading && !error && sortedTutors.length > 0 ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {sortedTutors.map(tutor => (
                 <div key={tutor.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300">
                   <div className="md:flex">
                     {/* Tutor Image */}
-                    <div className="md:w-1/3 relative">
-                      <img 
-                        src={tutor.image} 
-                        alt={tutor.name} 
-                        className="w-full h-48 md:h-full object-cover"
-                      />
-                      {tutor.badge && (
-                        <span className={`absolute top-4 left-4 text-xs font-medium px-2.5 py-0.5 rounded-full ${getBadgeColor(tutor.badge)}`}>
-                          {tutor.badge}
-                        </span>
-                      )}
+                    <div className="md:w-1/3 relative bg-gray-200">
+                      <div className="w-full h-48 md:h-full flex items-center justify-center text-gray-400">
+                        {tutor.profile_pic ? (
+                          <img 
+                            src={tutor.profile_pic} 
+                            alt={tutor.name} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <svg className="w-24 h-24" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className={`absolute top-4 left-4 text-xs font-medium px-2.5 py-0.5 rounded-full ${getBadgeColor(tutor.experience)}`}>
+                        {getBadgeText(tutor.experience)}
+                      </span>
                     </div>
                     
                     {/* Tutor Details */}
@@ -356,7 +360,9 @@ const FindTutors = () => {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="text-xl font-bold text-gray-900">{tutor.name}</h3>
-                          <p className="text-gray-600">{tutor.subject} Specialist</p>
+                          <p className="text-gray-600">
+                            {Array.isArray(tutor.subjects) ? tutor.subjects.join(', ') : tutor.subjects}
+                          </p>
                         </div>
                         <div className="flex items-center bg-blue-50 px-2 py-1 rounded-full">
                           <svg className="w-4 h-4 text-blue-600 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -366,46 +372,43 @@ const FindTutors = () => {
                         </div>
                       </div>
                       
-                      {/* Rating and Experience */}
+                      {/* Experience */}
                       <div className="flex items-center space-x-4 mb-4">
-                        <div className="flex items-center">
-                          <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          <span className="text-sm font-medium text-gray-900">{tutor.rating}</span>
-                          <span className="text-xs text-gray-500 ml-1">({tutor.students}+ students)</span>
-                        </div>
                         <div className="text-sm text-gray-500">
-                          {tutor.experience} experience
+                          {tutor.experience} {tutor.experience === 1 ? 'year' : 'years'} experience
                         </div>
                       </div>
                       
-                      {/* Education */}
+                      {/* Qualifications */}
                       <div className="mb-3">
                         <p className="text-sm text-gray-700">
-                          <span className="font-medium">Education:</span> {tutor.education}
+                          <span className="font-medium">Education:</span> 
+                          {tutor.qualifications && tutor.qualifications.length > 0 ? (
+                            ` ${tutor.qualifications[0].qualification} from ${tutor.qualifications[0].institution}`
+                          ) : 'Not specified'}
                         </p>
                       </div>
                       
-                      {/* Teaching Methodology */}
+                      {/* Bio */}
                       <div className="mb-4">
                         <p className="text-sm text-gray-700">
-                          <span className="font-medium">Methodology:</span> {tutor.methodology}
+                          <span className="font-medium">About:</span> {tutor.bio || 'No bio provided'}
                         </p>
                       </div>
                       
-                      {/* Class Levels */}
+                      {/* Subjects */}
                       <div className="mb-4">
                         <p className="text-xs text-gray-500 mb-1">Teaches:</p>
                         <div className="flex flex-wrap gap-1">
-                          {tutor.classLevels.slice(0, 4).map(level => (
-                            <span key={level} className="px-2 py-1 bg-gray-50 text-gray-700 text-xs rounded-full">
-                              {level}
-                            </span>
-                          ))}
-                          {tutor.classLevels.length > 4 && (
+                          {Array.isArray(tutor.subjects) ? (
+                            tutor.subjects.slice(0, 4).map((subject, index) => (
+                              <span key={index} className="px-2 py-1 bg-gray-50 text-gray-700 text-xs rounded-full">
+                                {subject}
+                              </span>
+                            ))
+                          ) : (
                             <span className="px-2 py-1 bg-gray-50 text-gray-700 text-xs rounded-full">
-                              +{tutor.classLevels.length - 4} more
+                              {tutor.subjects}
                             </span>
                           )}
                         </div>
@@ -413,10 +416,10 @@ const FindTutors = () => {
                       
                       {/* Price and CTA */}
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                        <div>
-                          <span className="text-xl font-bold text-gray-900">₹{tutor.price}</span>
-                          <span className="text-sm text-gray-500">/hour</span>
-                        </div>
+                        {/* <div>
+                          <span className="text-xl font-bold text-gray-900">₹{tutor.charge_hourly}</span>
+                          <span className="text-sm text-gray-500">/Month</span>
+                        </div> */}
                         <div className="flex space-x-2">
                           <button
                             onClick={() => viewProfile(tutor.id)}
@@ -438,21 +441,23 @@ const FindTutors = () => {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm p-12 text-center">
-              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <h3 className="mt-2 text-lg font-medium text-gray-900">No tutors found</h3>
-              <p className="mt-1 text-gray-500">Try adjusting your search filters to find what you're looking for.</p>
-              <div className="mt-6">
-                <button
-                  onClick={resetFilters}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition duration-200"
-                >
-                  Reset All Filters
-                </button>
+            !loading && !error && (
+              <div className="bg-white rounded-xl shadow-sm p-12 text-center">
+                <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="mt-2 text-lg font-medium text-gray-900">No tutors found</h3>
+                <p className="mt-1 text-gray-500">Try adjusting your search filters to find what you're looking for.</p>
+                <div className="mt-6">
+                  <button
+                    onClick={resetFilters}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition duration-200"
+                  >
+                    Reset All Filters
+                  </button>
+                </div>
               </div>
-            </div>
+            )
           )}
         </div>
       </div>
@@ -478,16 +483,26 @@ const FindTutors = () => {
 
               <div className="mb-6 p-4 bg-blue-50 rounded-lg">
                 <div className="flex items-center">
-                  <img 
-                    src={selectedTutor.image} 
-                    alt={selectedTutor.name} 
-                    className="w-16 h-16 rounded-full object-cover mr-4"
-                  />
+                  <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mr-4">
+                    {selectedTutor.profile_pic ? (
+                      <img 
+                        src={selectedTutor.profile_pic} 
+                        alt={selectedTutor.name} 
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                  </div>
                   <div>
                     <h4 className="font-medium text-gray-900">{selectedTutor.name}</h4>
-                    <p className="text-sm text-gray-600">{selectedTutor.subject} Specialist</p>
+                    <p className="text-sm text-gray-600">
+                      {Array.isArray(selectedTutor.subjects) ? selectedTutor.subjects.join(', ') : selectedTutor.subjects}
+                    </p>
                     <p className="text-sm font-medium text-gray-900 mt-1">
-                      ₹{selectedTutor.price} <span className="text-gray-500 font-normal">/hour</span>
+                      ₹{selectedTutor.charge_hourly} <span className="text-gray-500 font-normal">/hour</span>
                     </p>
                   </div>
                 </div>

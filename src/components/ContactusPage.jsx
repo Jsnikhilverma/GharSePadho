@@ -1,6 +1,65 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const ContactUs = () => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone_no: '',
+    message: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState(null);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus(null);
+
+    try {
+      const response = await fetch('http://127.0.0.1:8080/tuition_api/api/queries/create.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: `${formData['first-name']} ${formData['last-name']}`,
+          email: formData.email,
+          phone_no: formData.phone,
+          message: formData.message
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSubmitStatus('success');
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone_no: '',
+          message: ''
+        });
+      } else {
+        setSubmitStatus('error');
+        console.error('Submission error:', data.message);
+      }
+    } catch (error) {
+      setSubmitStatus('error');
+      console.error('Network error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="bg-gradient-to-b from-gray-50 to-gray-100">
       {/* Hero Section */}
@@ -35,7 +94,18 @@ const ContactUs = () => {
               </p>
             </div>
 
-            <form className="space-y-6">
+            {submitStatus === 'success' && (
+              <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg">
+                Thank you for your message! We'll get back to you soon.
+              </div>
+            )}
+            {submitStatus === 'error' && (
+              <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg">
+                There was an error submitting your message. Please try again.
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="first-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -46,6 +116,8 @@ const ContactUs = () => {
                     id="first-name"
                     name="first-name"
                     required
+                    value={formData['first-name'] || ''}
+                    onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
@@ -58,6 +130,8 @@ const ContactUs = () => {
                     id="last-name"
                     name="last-name"
                     required
+                    value={formData['last-name'] || ''}
+                    onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
                 </div>
@@ -72,6 +146,8 @@ const ContactUs = () => {
                   id="email"
                   name="email"
                   required
+                  value={formData.email || ''}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
@@ -84,11 +160,13 @@ const ContactUs = () => {
                   type="tel"
                   id="phone"
                   name="phone"
+                  value={formData.phone || ''}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 />
               </div>
 
-              <div>
+              {/* <div>
                 <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                   Subject <span className="text-red-500">*</span>
                 </label>
@@ -96,6 +174,8 @@ const ContactUs = () => {
                   id="subject"
                   name="subject"
                   required
+                  value={formData.subject || ''}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
                   <option value="">Select a subject</option>
@@ -105,7 +185,7 @@ const ContactUs = () => {
                   <option value="feedback">Feedback</option>
                   <option value="other">Other</option>
                 </select>
-              </div>
+              </div> */}
 
               <div>
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
@@ -116,6 +196,8 @@ const ContactUs = () => {
                   name="message"
                   rows="5"
                   required
+                  value={formData.message || ''}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 ></textarea>
               </div>
@@ -123,9 +205,10 @@ const ContactUs = () => {
               <div>
                 <button
                   type="submit"
-                  className="w-full bg-blue-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300"
+                  disabled={isSubmitting}
+                  className={`w-full bg-blue-700 hover:from-purple-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${isSubmitting ? 'opacity-70 cursor-not-allowed' : ''}`}
                 >
-                  Send Message
+                  {isSubmitting ? 'Sending...' : 'Send Message'}
                 </button>
               </div>
             </form>
@@ -149,9 +232,8 @@ const ContactUs = () => {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Call Us</h3>
-                  <p className="text-gray-600">+91 98765 43210</p>
-                  <p className="text-gray-600">+91 11 2345 6789</p>
-                  <p className="text-sm text-gray-500 mt-2">Monday to Saturday, 9AM to 6PM</p>
+                  <p className="text-gray-600">+91 9354383537 </p>
+                  <p className="text-gray-600">+91 8882067974</p>
                 </div>
               </div>
 
@@ -163,9 +245,8 @@ const ContactUs = () => {
                 </div>
                 <div className="ml-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Email Us</h3>
-                  <p className="text-gray-600">info@eliteeducators.com</p>
-                  <p className="text-gray-600">support@eliteeducators.com</p>
-                  <p className="text-sm text-gray-500 mt-2">We typically reply within 24 hours</p>
+                  <p className="text-gray-600">info@gharsepadho.com</p>
+                  <p className="text-gray-600">support@gharsepadho.com</p>
                 </div>
               </div>
 
@@ -179,9 +260,8 @@ const ContactUs = () => {
                 <div className="ml-4">
                   <h3 className="text-lg font-bold text-gray-900 mb-1">Visit Us</h3>
                   <p className="text-gray-600">GharSePadho Educators India Pvt. Ltd.</p>
-                  <p className="text-gray-600">123 Education Tower, Connaught Place</p>
-                  <p className="text-gray-600">New Delhi - 110001, India</p>
-                  <p className="text-sm text-gray-500 mt-2">By appointment only</p>
+                  <p className="text-gray-600">Add:- 218, Rithala Village, Rohini Sector -5, North West Delhi</p>
+                  <p className="text-gray-600">New Delhi, Pincode - 110085, India</p>
                 </div>
               </div>
             </div>
@@ -221,7 +301,7 @@ const ContactUs = () => {
       </div>
 
       {/* Map Section */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-24">
+      {/* <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-24">
         <div className="bg-white rounded-xl shadow-xl overflow-hidden border border-gray-200">
           <iframe 
             src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3502.381701287936!2d77.2065623150823!3d28.63273998242389!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390cfd37b741d057%3A0xcdee88e47393c3f1!2sConnaught%20Place%2C%20New%20Delhi%2C%20Delhi%20110001!5e0!3m2!1sen!2sin!4v1628082998183!5m2!1sen!2sin" 
@@ -233,7 +313,7 @@ const ContactUs = () => {
             title="GharSePadho Educators Location"
           ></iframe>
         </div>
-      </div>
+      </div> */}
 
       {/* FAQ Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 md:pb-24">

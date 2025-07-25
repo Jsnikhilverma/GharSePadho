@@ -26,9 +26,10 @@ const Footer = () => {
           <div className="text-center md:text-left">
             <h3 className="text-sm font-semibold tracking-wider uppercase">Address</h3>
             <ul className="mt-4 space-y-2">
-              <li className="text-gray-300 text-sm">123 Main Street, Cityville, Country</li>
-              <li className="text-gray-300 text-sm">Mobile: +1 234 567 890</li>
-              <li className="text-gray-300 text-sm">Email: contact@eduluxtutors.com</li>
+              <li className="text-gray-300 text-sm">Add:- 218, Rithala Village, Rohini Sector -5, North West Delhi , New Delhi, Pincode - 110085</li>
+              <li className="text-gray-300 text-sm">Mobile No - 9354383537</li>
+              <li className="text-gray-300 text-sm">Mobile No - 8882067974</li>
+              {/* <li className="text-gray-300 text-sm">Email: contact@eduluxtutors.com</li> */}
             </ul>
           </div>
 
@@ -46,7 +47,7 @@ const Footer = () => {
               </li>
               <li>
                 <button 
-                  onClick={() => handleNavigation('/findtuter')} 
+                  onClick={() => handleNavigation('/findtutor')} 
                   className="text-gray-300 hover:text-white text-sm"
                 >
                   Find Tutor
@@ -80,7 +81,7 @@ const Footer = () => {
                   onClick={() => handleNavigation('/term')} 
                   className="text-gray-300 hover:text-white text-sm"
                 >
-                  Terms of Service
+                  Terms of Conditions
                 </button>
               </li>
               <li>
@@ -89,6 +90,14 @@ const Footer = () => {
                   className="text-gray-300 hover:text-white text-sm"
                 >
                   Privacy Policy
+                </button>
+              </li>
+               <li>
+                <button 
+                  onClick={() => handleNavigation('/contact')} 
+                  className="text-gray-300 hover:text-white text-sm"
+                >
+                  Faq
                 </button>
               </li>
             </ul>

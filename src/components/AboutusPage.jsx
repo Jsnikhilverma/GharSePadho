@@ -11,7 +11,7 @@ const AboutUs = () => {
 };
   
   const handleContactSession = () => {
-        navigate('/findtuter');
+        navigate('/findtutor');
 
   };
 

@@ -1,6 +1,6 @@
 // src/pages/Register.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const [activeTab, setActiveTab] = useState('student');
@@ -14,8 +14,15 @@ const Register = () => {
     subjects: [],
     educationLevel: '',
     bio: '',
-    experience: ''
+    experience: '',
+    address: '',
+    chargeHourly: '',
+    qualifications: [{ qualification: '', institution: '', year: '' }]
   });
+  const [subjectInput, setSubjectInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -34,10 +41,132 @@ const Register = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleQualificationChange = (index, e) => {
+    const { name, value } = e.target;
+    const updatedQualifications = [...formData.qualifications];
+    updatedQualifications[index] = {
+      ...updatedQualifications[index],
+      [name]: value
+    };
+    setFormData({
+      ...formData,
+      qualifications: updatedQualifications
+    });
+  };
+
+  const addQualification = () => {
+    setFormData({
+      ...formData,
+      qualifications: [...formData.qualifications, { qualification: '', institution: '', year: '' }]
+    });
+  };
+
+  const removeQualification = (index) => {
+    const updatedQualifications = [...formData.qualifications];
+    updatedQualifications.splice(index, 1);
+    setFormData({
+      ...formData,
+      qualifications: updatedQualifications
+    });
+  };
+
+  const handleSubjectInput = (e) => {
+    setSubjectInput(e.target.value);
+  };
+
+  const addSubject = (e) => {
     e.preventDefault();
-    // Handle registration logic here
-    console.log('Form submitted:', formData);
+    if (subjectInput.trim() && !formData.subjects.includes(subjectInput.trim())) {
+      setFormData({
+        ...formData,
+        subjects: [...formData.subjects, subjectInput.trim()]
+      });
+      setSubjectInput('');
+    }
+  };
+
+  const removeSubject = (subjectToRemove) => {
+    setFormData({
+      ...formData,
+      subjects: formData.subjects.filter(subject => subject !== subjectToRemove)
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      if (activeTab === 'student') {
+        // Student registration
+        const response = await fetch('http://127.0.0.1:8080/tuition_api/api/auth/register_student.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            mobile_no: formData.phone,
+            password: formData.password,
+            education_level: formData.educationLevel
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Student registration failed');
+        }
+
+        // Redirect to login or dashboard after successful registration
+        navigate('/login', { state: { registrationSuccess: true } });
+      } else {
+        // Teacher registration
+        const response = await fetch('http://127.0.0.1:8080/tuition_api/api/auth/register_teacher.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            mobile_no: formData.phone,
+            password: formData.password,
+            address: formData.address,
+            experience: parseInt(formData.experience.split('-')[0]), // Extract years from "1-3" format
+            charge_hourly: parseFloat(formData.chargeHourly),
+            bio: formData.bio,
+            subjects: formData.subjects,
+            qualifications: formData.qualifications.filter(q => 
+              q.qualification && q.institution && q.year
+            )
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (!response.ok) {
+          throw new Error(data.message || 'Teacher registration failed');
+        }
+
+        // Redirect to login or dashboard after successful registration
+        navigate('/login', { state: { registrationSuccess: true } });
+      }
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+      console.error('Registration error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const subjectOptions = [
@@ -53,7 +182,7 @@ const Register = () => {
         <div className="text-center mb-12">
           <Link to="/" className="inline-block">
             <h1 className="text-3xl font-serif font-bold text-gray-900">
-              GharSe<span className="text-indigo-600">Padho</span>
+              GharSe<span className="text-blue-600">Padho</span>
             </h1>
           </Link>
           <p className="mt-2 text-lg text-gray-600">
@@ -66,7 +195,7 @@ const Register = () => {
           {/* Tab Navigation */}
           <div className="flex border-b border-gray-200">
             <button
-              className={`flex-1 py-4 px-6 text-center font-medium text-lg focus:outline-none transition-colors duration-300 ${activeTab === 'student' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
+              className={`flex-1 py-4 px-6 text-center font-medium text-lg focus:outline-none transition-colors duration-300 ${activeTab === 'student' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
               onClick={() => {
                 setActiveTab('student');
                 setFormData({...formData, userType: 'student'});
@@ -78,7 +207,7 @@ const Register = () => {
               Register as Student
             </button>
             <button
-              className={`flex-1 py-4 px-6 text-center font-medium text-lg focus:outline-none transition-colors duration-300 ${activeTab === 'teacher' ? 'bg-indigo-50 text-indigo-700 border-b-2 border-indigo-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
+              className={`flex-1 py-4 px-6 text-center font-medium text-lg focus:outline-none transition-colors duration-300 ${activeTab === 'teacher' ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'}`}
               onClick={() => {
                 setActiveTab('teacher');
                 setFormData({...formData, userType: 'teacher'});
@@ -93,6 +222,12 @@ const Register = () => {
 
           {/* Form Content */}
           <div className="p-8 sm:p-10">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 text-red-700">
+                <p>{error}</p>
+              </div>
+            )}
+            
             <form onSubmit={handleSubmit}>
               {/* Common Fields */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -108,7 +243,7 @@ const Register = () => {
                       value={formData.name}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
                       placeholder="Enter your full name"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -131,7 +266,7 @@ const Register = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
                       placeholder="Enter your email"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -155,7 +290,7 @@ const Register = () => {
                       onChange={handleChange}
                       required
                       minLength="8"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
                       placeholder="Create a password"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -179,7 +314,7 @@ const Register = () => {
                       onChange={handleChange}
                       required
                       minLength="8"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
                       placeholder="Confirm your password"
                     />
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -204,8 +339,8 @@ const Register = () => {
                     value={formData.phone}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
-                    placeholder="Enter your phone number"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
+                    placeholder="Enter your phone number with country code"
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
                     <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -227,15 +362,15 @@ const Register = () => {
                     value={formData.educationLevel}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
                   >
                     <option value="">Select your education level</option>
-                    <option value="primary">Primary School</option>
-                    <option value="middle">Middle School</option>
-                    <option value="high">High School</option>
-                    <option value="undergraduate">Undergraduate</option>
-                    <option value="graduate">Graduate</option>
-                    <option value="other">Other</option>
+                    <option value="Primary School">Primary School</option>
+                    <option value="Middle School">Middle School</option>
+                    <option value="High School">High School</option>
+                    <option value="Undergraduate">Undergraduate</option>
+                    <option value="Graduate">Graduate</option>
+                    <option value="Other">Other</option>
                   </select>
                 </div>
               )}
@@ -247,6 +382,42 @@ const Register = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       Subjects You Teach <span className="text-red-500">*</span>
                     </label>
+                    
+                    {/* Subject input and add button */}
+                    <div className="flex mb-4">
+                      <input
+                        type="text"
+                        value={subjectInput}
+                        onChange={handleSubjectInput}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
+                        placeholder="Add a subject (e.g. Mathematics)"
+                      />
+                      <button
+                        type="button"
+                        onClick={addSubject}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-300"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    
+                    {/* Selected subjects display */}
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {formData.subjects.map((subject) => (
+                        <div key={subject} className="flex items-center bg-blue-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+                          {subject}
+                          <button
+                            type="button"
+                            onClick={() => removeSubject(subject)}
+                            className="ml-2 text-indigo-600 hover:text-indigo-900 focus:outline-none"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Predefined subject options */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                       {subjectOptions.map((subject) => (
                         <div key={subject} className="flex items-center">
@@ -290,25 +461,43 @@ const Register = () => {
                     </div>
 
                     <div>
-                      <label htmlFor="educationLevel" className="block text-sm font-medium text-gray-700 mb-1">
-                        Highest Qualification <span className="text-red-500">*</span>
+                      <label htmlFor="chargeHourly" className="block text-sm font-medium text-gray-700 mb-1">
+                        Hourly Charge (₹) <span className="text-red-500">*</span>
                       </label>
-                      <select
-                        id="educationLevel"
-                        name="educationLevel"
-                        value={formData.educationLevel}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
-                      >
-                        <option value="">Select your qualification</option>
-                        <option value="bachelors">Bachelor's Degree</option>
-                        <option value="masters">Master's Degree</option>
-                        <option value="phd">PhD</option>
-                        <option value="professional">Professional Certification</option>
-                        <option value="other">Other</option>
-                      </select>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          id="chargeHourly"
+                          name="chargeHourly"
+                          value={formData.chargeHourly}
+                          onChange={handleChange}
+                          required
+                          min="0"
+                          step="50"
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                          placeholder="Your hourly rate"
+                        />
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                          <span className="text-gray-500">₹</span>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="mb-8">
+                    <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                      Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="address"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      required
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                      placeholder="Your full address"
+                    />
                   </div>
 
                   <div className="mb-8">
@@ -322,41 +511,131 @@ const Register = () => {
                       onChange={handleChange}
                       required
                       rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition duration-300"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
                       placeholder="Tell us about your teaching experience, methodology, and specialties"
                     />
+                  </div>
+
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Qualifications <span className="text-red-500">*</span>
+                    </label>
+                    
+                    {formData.qualifications.map((qual, index) => (
+                      <div key={index} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div>
+                          <label htmlFor={`qualification-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                            Qualification
+                          </label>
+                          <input
+                            type="text"
+                            id={`qualification-${index}`}
+                            name="qualification"
+                            value={qual.qualification}
+                            onChange={(e) => handleQualificationChange(index, e)}
+                            required={index === 0}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
+                            placeholder="Degree/Certification"
+                          />
+                        </div>
+                        <div>
+                          <label htmlFor={`institution-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                            Institution
+                          </label>
+                          <input
+                            type="text"
+                            id={`institution-${index}`}
+                            name="institution"
+                            value={qual.institution}
+                            onChange={(e) => handleQualificationChange(index, e)}
+                            required={index === 0}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
+                            placeholder="University/School"
+                          />
+                        </div>
+                        <div className="flex items-end space-x-2">
+                          <div className="flex-1">
+                            <label htmlFor={`year-${index}`} className="block text-sm font-medium text-gray-700 mb-1">
+                              Year
+                            </label>
+                            <input
+                              type="number"
+                              id={`year-${index}`}
+                              name="year"
+                              value={qual.year}
+                              onChange={(e) => handleQualificationChange(index, e)}
+                              required={index === 0}
+                              min="1900"
+                              max={new Date().getFullYear()}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-300"
+                              placeholder="Year"
+                            />
+                          </div>
+                          {index > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => removeQualification(index)}
+                              className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 transition duration-300"
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    
+                    <button
+                      type="button"
+                      onClick={addQualification}
+                      className="mt-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 transition duration-300"
+                    >
+                      + Add Another Qualification
+                    </button>
                   </div>
                 </>
               )}
 
               {/* Terms and Conditions */}
-              <div className="flex items-start mb-8">
+              {/* <div className="flex items-start mb-8">
                 <div className="flex items-center h-5">
                   <input
                     id="terms"
                     name="terms"
                     type="checkbox"
                     required
-                    className="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300 rounded"
+                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="terms" className="font-medium text-gray-700">
-                    I agree to the <a href="#" className="text-indigo-600 hover:text-indigo-500">Terms of Service</a> and <a href="#" className="text-indigo-600 hover:text-indigo-500">Privacy Policy</a>
+                    I agree to the <a href="#" className="text-blue-600 hover:text-blue-500">Terms of Service</a> and <a href="#" className="text-blue-600 hover:text-blue-500">Privacy Policy</a>
                   </label>
                 </div>
-              </div>
+              </div> */}
 
               {/* Submit Button */}
               <div>
                 <button
                   type="submit"
-                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-300"
+                  disabled={loading}
+                  className="w-full flex justify-center items-center py-4 px-6 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {activeTab === 'student' ? 'Create Student Account' : 'Apply as Teacher'}
-                  <svg className="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
-                  </svg>
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {activeTab === 'student' ? 'Create Student Account' : 'Apply as Teacher'}
+                      <svg className="ml-2 -mr-1 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                      </svg>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -365,7 +644,7 @@ const Register = () => {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Already have an account?{' '}
-                <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
                   Sign in
                 </Link>
               </p>

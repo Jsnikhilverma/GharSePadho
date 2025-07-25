@@ -11,14 +11,14 @@ const CTA = () => {
         </h2>
         <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
           <div className="inline-flex rounded-md shadow">
-            <a href="#"
+            {/* <a href=""
               className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-primary bg-blue-400 hover:bg-gray-50 hover:text-blue-700">
               Get Started
-            </a>
+            </a> */}
           </div>
           <div className="ml-3 inline-flex rounded-md shadow">
-            <a href="#contact"
-              className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-700 bg-white hover:bg-blue-400">
+            <a href="/contact"
+              className="inline-flex items-center justify-center px-5 py-3 border border-black text-base font-medium rounded-md text-blue-700 bg-white hover:bg-blue-400 hover:text-white">
               Contact Us
             </a>
           </div>

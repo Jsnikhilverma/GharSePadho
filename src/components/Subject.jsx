@@ -41,13 +41,11 @@ const subjects = [
 export default function SubjectGrid() {
   const navigate = useNavigate();
 
-  const handleCardClick = () => {
-    navigate('/findtuter');
+  const handleCardClick = (subjectLabel) => {
+    // Convert subject label to lowercase and replace spaces with hyphens for URL
+    const subjectParam = subjectLabel.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/findtutor?subject=${subjectParam}`);
   };
-
-//   const handleButtonClick = () => {
-//     navigate('/findtuter');
-//   };
 
   return (
     <div className="min-h-screen px-6 py-16 bg-gradient-to-br from-white to-blue-50">
@@ -59,7 +57,7 @@ export default function SubjectGrid() {
             <GraduationCap className="h-5 w-5 text-blue-600" />
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-center text-gray-800 mb-4 tracking-tight">
-            Expert Tutors for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-800">Every Subject</span>
+            Expert Tutors for <span className="text-transparent bg-clip-text bg-blue-600">Every Subject</span>
           </h2>
           <p className="text-center text-gray-600 max-w-2xl mx-auto text-lg leading-relaxed">
             Connect with our professional educators to unlock your academic potential.
@@ -70,7 +68,7 @@ export default function SubjectGrid() {
           {subjects.map((subject, index) => (
             <div
               key={index}
-              onClick={handleCardClick}
+              onClick={() => handleCardClick(subject.label)}
               className="group relative bg-white p-6 rounded-xl border border-blue-100 hover:border-blue-300 transition-all duration-300 cursor-pointer hover:shadow-lg hover:shadow-blue-100 hover:-translate-y-1"
             >
               <div className="flex flex-col items-center">
@@ -85,19 +83,6 @@ export default function SubjectGrid() {
             </div>
           ))}
         </div>
-
-        {/* <div className="mt-16 flex justify-center">
-          <button 
-            onClick={handleButtonClick}
-            className="relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-8 py-4 rounded-xl font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-800 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-            <span className="relative z-10 flex items-center">
-              Browse All Subjects
-              <ChevronRight className="h-5 w-5 ml-2 transition-transform group-hover:translate-x-1" />
-            </span>
-          </button>
-        </div> */}
       </div>
     </div>
   );

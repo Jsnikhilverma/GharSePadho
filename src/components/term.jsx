@@ -6,7 +6,7 @@ const TermsAndConditions = () => {
       <h1 className="text-3xl font-bold text-center mb-8 text-indigo-700">Terms and Conditions</h1>
       
       <div className="bg-white rounded-lg shadow-md p-6">
-        <p className="text-gray-600 mb-6">Last Updated: {new Date().toLocaleDateString()}</p>
+        {/* <p className="text-gray-600 mb-6">Last Updated: {new Date().toLocaleDateString()}</p> */}
         
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-4 text-indigo-600">1. Acceptance of Terms</h2>

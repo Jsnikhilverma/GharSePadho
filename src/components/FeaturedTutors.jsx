@@ -1,50 +1,18 @@
 // src/components/FeaturedTutors.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-
-const tutors = [
-  {
-    id: 1,
-    name: "Dr. Priya Sharma",
-    role: "Mathematics Professor",
-    rating: 4.9,
-    location: "Central District, Online",
-    price: "₹800/hr",
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-    tags: ["Class 9-12", "IIT-JEE", "10+ Years Exp"],
-    profileLink: "/teacherprofile"
-  },
-  {
-    id: 2,
-    name: "Rahul Verma",
-    role: "Physics Specialist",
-    rating: 4.8,
-    location: "North District, In-person",
-    price: "₹650/hr",
-    image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-    tags: ["Class 6-10", "NEET", "7 Years Exp"],
-    profileLink: "/teacherprofile"
-  },
-  {
-    id: 3,
-    name: "Ananya Patel",
-    role: "English Literature",
-    rating: 4.7,
-    location: "South District, Hybrid",
-    price: "₹550/hr",
-    image: "https://images.unsplash.com/photo-1544717305-2782549b5136?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-    tags: ["Class 1-8", "IELTS", "5 Years Exp"],
-    profileLink: "/teacherprofile"
-  }
-];
 
 const TutorCard = ({ tutor }) => {
   return (
     <div className="teacher-card bg-white rounded-lg overflow-hidden shadow-md transition-all duration-300 hover:shadow-xl">
       <div className="relative">
-        <img className="w-full h-96 object-cover" src={tutor.image} alt="Tutor" />
-        <div className="absolute top-4 right-4 bg-primary text-white text-xs font-bold px-2 py-1 rounded-full">
-          <i className="fas fa-star mr-1"></i> {tutor.rating}
+        <img 
+          className="w-full h-96 object-cover" 
+          src={tutor.profile_pic || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80"} 
+          alt={tutor.name} 
+        />
+        <div className="absolute top-4 right-4 bg-blue-700 text-white text-xs font-bold px-2 py-1 rounded-full">
+          <i className="fas fa-star mr-1"></i> {tutor.experience}+
         </div>
       </div>
       <div className="p-6">
@@ -52,27 +20,32 @@ const TutorCard = ({ tutor }) => {
           <h3 className="text-xl font-bold text-dark">{tutor.name}</h3>
           <span className="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span>
         </div>
-        <p className="mt-1 text-gray-600">{tutor.role}</p>
+        <p className="mt-1 text-gray-600">{tutor.subjects.join(', ')}</p>
         <div className="mt-4 flex items-center">
           <i className="fas fa-map-marker-alt text-gray-400 mr-2"></i>
-          <span className="text-sm text-gray-600">{tutor.location}</span>
+          <span className="text-sm text-gray-600">{tutor.address}</span>
         </div>
         <div className="mt-4">
           <div className="flex flex-wrap gap-2">
-            {tutor.tags.map((tag, index) => (
+            {tutor.subjects.slice(0, 3).map((subject, index) => (
               <span key={index} className={`px-2 py-1 ${
-                index === 0 ? 'bg-blue-100 text-blue-800' : 
+                index === 0 ? 'bg-blue-100 text-blue-600' : 
                 index === 1 ? 'bg-purple-100 text-purple-800' : 
                 'bg-green-100 text-green-800'
               } text-xs rounded`}>
-                {tag}
+                {subject}
               </span>
             ))}
+            {tutor.qualifications.length > 0 && (
+              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded">
+                {tutor.qualifications[0].qualification}
+              </span>
+            )}
           </div>
         </div>
         <div className="mt-6 flex items-center justify-between">
-          <span className="text-xl font-bold text-primary">{tutor.price}</span>
-          <Link to="/findtuter" className="text-sm font-medium text-blue-700 hover:text-indigo-500">
+          {/* <span className="text-xl font-bold text-blue-700">₹{tutor.charge_hourly}/Month</span> */}
+          <Link to={`/teacherprofile/${tutor.id}`} className="text-sm font-medium text-blue-700 hover:text-indigo-500">
             View Profile →
           </Link>
         </div>
@@ -82,6 +55,57 @@ const TutorCard = ({ tutor }) => {
 };
 
 const FeaturedTutors = () => {
+  const [tutors, setTutors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTutors = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8080/tuition_api/api/teachers/get_all.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({}),
+        });
+        
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        
+        const data = await response.json();
+        setTutors(data.slice(0, 3)); // Only show first 3 tutors
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTutors();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p>Loading tutors...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="py-16 bg-white text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-red-500">Error loading tutors: {error}</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div id="teachers" className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -94,14 +118,18 @@ const FeaturedTutors = () => {
 
         {/* Tutor Cards */}
         <div className="mt-12 grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-          {tutors.map(tutor => (
-            <TutorCard key={tutor.id} tutor={tutor} />
-          ))}
+          {tutors.length > 0 ? (
+            tutors.map(tutor => (
+              <TutorCard key={tutor.id} tutor={tutor} />
+            ))
+          ) : (
+            <p className="col-span-3 text-center text-gray-500">No tutors found</p>
+          )}
         </div>
 
         <div className="mt-12 text-center">
-          <Link to="/findtuter"
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-700 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
+          <Link to="/findtutor"
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary">
             View All Tutors
           </Link>
         </div>

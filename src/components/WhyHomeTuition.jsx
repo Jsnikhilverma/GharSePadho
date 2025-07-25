@@ -37,7 +37,7 @@ const WhyHomeTuition = () => {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 mb-8">
       <div className="text-center mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-indigo-700 mb-3">
+        <h1 className="text-3xl md:text-4xl font-bold text-blue-600 mb-3">
           Why Choose Home Tuition? <span className="text-2xl">🧑🏻‍🏫</span>
         </h1>
         <p className="text-gray-600 text-lg">

@@ -1,74 +1,147 @@
-// src/pages/TutorProfile.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import BookingModal from '../components/BookingModal'; // Ensure this path is correct
 
 const TutorProfile = () => {
   const { id } = useParams();
+  const [tutor, setTutor] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showBookingModal, setShowBookingModal] = useState(false); // State to control modal visibility
+  const [bookingForm, setBookingForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    date: '',
+    time: '',
+    duration: '1', // Default to 1 hour
+    message: '',
+  });
 
-  // Sample tutor data (in a real app, this would come from an API)
-  const tutor = {
-    id: 1,
-    name: "Dr. Priya Sharma",
-    subject: "Mathematics",
-    classLevels: ["Class 9", "Class 10", "Class 11", "Class 12"],
-    location: "Central District, New Delhi",
-    price: 800,
-    rating: 4.9,
-    reviews: 128,
-    experience: "10+ years",
-    education: "PhD in Mathematics, IIT Delhi",
-    languages: ["English", "Hindi", "Bengali"],
-    image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80",
-    methodology: "Concept-based learning with real-world applications",
-    bio: "With over a decade of teaching experience, I specialize in making complex mathematical concepts accessible and enjoyable. My students consistently achieve top results in board exams and competitive tests.",
-    availability: [
-      { day: "Monday", time: "4:00 PM - 8:00 PM" },
-      { day: "Wednesday", time: "4:00 PM - 8:00 PM" },
-      { day: "Friday", time: "4:00 PM - 8:00 PM" },
-      { day: "Saturday", time: "10:00 AM - 2:00 PM" }
-    ],
-    qualifications: [
-      "PhD in Mathematics (IIT Delhi)",
-      "MSc Mathematics (University of Delhi)",
-      "BEd (Mathematics Specialization)"
-    ],
-    achievements: [
-      "Gold Medalist in National Mathematics Olympiad",
-      "Author of 'Advanced Calculus Made Simple'",
-      "Recognized as Top Educator 2022 by Education Times"
-    ],
-    teachingStyle: [
-      "Interactive whiteboard sessions",
-      "Customized learning plans",
-      "Regular progress assessments",
-      "Exam strategy workshops"
-    ]
+  useEffect(() => {
+    const fetchTutorData = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:8080/tuition_api/api/teachers/get_by_id.php?id=${id}`);
+        const data = await response.json();
+
+        if (data.success) {
+          setTutor(data.data);
+        } else {
+          setError('Failed to fetch tutor data');
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTutorData();
+  }, [id]);
+
+  // Sample reviews data (you might want to fetch this from API as well)
+  // const reviews = [
+  //   {
+  //     id: 1,
+  //     student: "Rahul Mehta",
+  //     rating: 5,
+  //     date: "2 weeks ago",
+  //     comment: "Dr. Smith transformed my approach to physics. His explanations are crystal clear and he makes even the most complex topics manageable."
+  //   },
+  //   {
+  //     id: 2,
+  //     student: "Ananya Patel",
+  //     rating: 5,
+  //     date: "1 month ago",
+  //     comment: "Best math tutor I've ever had! My grades improved from 65% to 92% in just 3 months."
+  //   },
+  //   {
+  //     id: 3,
+  //     student: "Vikram Singh",
+  //     rating: 4,
+  //     date: "2 months ago",
+  //     comment: "Very knowledgeable and patient. The only reason I didn't give 5 stars is because his schedule is quite packed."
+  //   }
+  // ];
+
+  const openBookingModal = () => setShowBookingModal(true);
+  const closeBookingModal = () => setShowBookingModal(false);
+
+  const handleBookingFormChange = (e) => {
+    const { name, value } = e.target;
+    setBookingForm((prevForm) => ({
+      ...prevForm,
+      [name]: value,
+    }));
   };
 
-  // Sample reviews data
-  const reviews = [
-    {
-      id: 1,
-      student: "Rahul Mehta",
-      rating: 5,
-      date: "2 weeks ago",
-      comment: "Dr. Sharma transformed my approach to calculus. Her explanations are crystal clear and she makes even the most complex topics manageable."
-    },
-    {
-      id: 2,
-      student: "Ananya Patel",
-      rating: 5,
-      date: "1 month ago",
-      comment: "Best math tutor I've ever had! My grades improved from 65% to 92% in just 3 months."
-    },
-    {
-      id: 3,
-      student: "Vikram Singh",
-      rating: 4,
-      date: "2 months ago",
-      comment: "Very knowledgeable and patient. The only reason I didn't give 5 stars is because her schedule is quite packed."
-    }
-  ];
+  const handleBookingSubmit = async (e) => {
+    e.preventDefault();
+    // In a real application, you'd send this data to your backend API
+    console.log('Booking submitted:', {
+      tutorId: tutor.id,
+      tutorName: tutor.name,
+      ...bookingForm,
+    });
+    alert(`Booking request sent for ${tutor.name} on ${bookingForm.date} at ${bookingForm.time} for ${bookingForm.duration} hours.`);
+    closeBookingModal();
+    // You might want to add success/error handling here
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading tutor profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error loading tutor profile</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Link to="/findtutors" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to All Tutors
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!tutor) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-gray-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Tutor not found</h3>
+          <p className="text-gray-600 mb-4">The tutor you're looking for doesn't exist or may have been removed.</p>
+          <Link to="/findtutors" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center justify-center">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to All Tutors
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,53 +151,51 @@ const TutorProfile = () => {
           <div className="flex flex-col md:flex-row items-center">
             <div className="md:w-1/3 flex justify-center mb-8 md:mb-0">
               <div className="relative">
-                <img 
-                  src={tutor.image} 
-                  alt={tutor.name} 
+                <img
+                  src={tutor.profile_pic || "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&q=80"}
+                  alt={tutor.name}
                   className="w-64 h-64 rounded-full object-cover border-4 border-white shadow-xl"
                 />
-                <div className="absolute -bottom-2 -right-2 bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-full text-sm flex items-center">
+                {/* <div className="absolute -bottom-2 -right-2 bg-amber-400 text-amber-900 font-bold px-3 py-1 rounded-full text-sm flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
-                  {tutor.rating}
-                </div>
+                  4.9
+                </div> */}
               </div>
             </div>
             <div className="md:w-2/3 text-center md:text-left">
               <h1 className="text-4xl font-serif font-bold mb-2">{tutor.name}</h1>
-              <h2 className="text-2xl font-light mb-4">{tutor.subject} Specialist</h2>
-              
+              <h2 className="text-2xl font-light mb-4">{tutor.subjects.join(', ')}</h2>
+
               <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-6">
                 <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  {tutor.experience} Experience
+                  {tutor.experience}+ years Experience
                 </div>
                 <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
-                  {tutor.location}
+                  {tutor.address}
                 </div>
-                <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
+                {/* <div className="flex items-center bg-white text-blue-700 bg-opacity-20 px-4 py-2 rounded-full">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  ₹{tutor.price}/hour
-                </div>
+                  ₹{tutor.charge_hourly}/Month
+                </div> */}
               </div>
-              
+
               <div className="flex justify-center md:justify-start space-x-4">
-                <button className="bg-white text-indigo-900 hover:bg-gray-100 font-medium px-6 py-3 rounded-lg shadow-md transition duration-300 flex items-center">
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                  Message Tutor
-                </button>
-                <button className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-lg shadow-md transition duration-300 flex items-center">
+                {/* Book Session button */}
+                <button
+                  onClick={openBookingModal}
+                  className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-6 py-3 rounded-lg shadow-md transition duration-300 flex items-center"
+                >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
@@ -145,42 +216,44 @@ const TutorProfile = () => {
             <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
               <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">About {tutor.name}</h3>
               <p className="text-gray-700 mb-6">{tutor.bio}</p>
-              
-              <h4 className="text-xl font-medium text-gray-900 mb-4">Teaching Methodology</h4>
-              <p className="text-gray-700 mb-6">{tutor.methodology}</p>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <h4 className="text-xl font-medium text-gray-900 mb-4">Teaching Style</h4>
-                  <ul className="space-y-2">
-                    {tutor.teachingStyle.map((style, index) => (
-                      <li key={index} className="flex items-start">
-                        <svg className="w-5 h-5 text-green-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span className="text-gray-700">{style}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                
-                <div>
-                  <h4 className="text-xl font-medium text-gray-900 mb-4">Languages</h4>
+                  <h4 className="text-xl font-medium text-gray-900 mb-4">Subjects</h4>
                   <div className="flex flex-wrap gap-2">
-                    {tutor.languages.map((language, index) => (
+                    {tutor.subjects.map((subject, index) => (
                       <span key={index} className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-sm">
-                        {language}
+                        {subject}
                       </span>
                     ))}
                   </div>
                 </div>
+
+                <div>
+                  <h4 className="text-xl font-medium text-gray-900 mb-4">Contact</h4>
+                  <div className="space-y-2">
+                    <p className="flex items-center text-gray-700">
+                      <svg className="w-5 h-5 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      {tutor.mobile_no}
+                    </p>
+                    <p className="flex items-start text-gray-700">
+                      <svg className="w-5 h-5 text-gray-500 mr-2 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                      {tutor.address}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            
+
             {/* Qualifications Section */}
             <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
               <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Qualifications & Achievements</h3>
-              
+
               <h4 className="text-xl font-medium text-gray-900 mb-4">Education</h4>
               <ul className="space-y-3 mb-6">
                 {tutor.qualifications.map((qualification, index) => (
@@ -188,124 +261,85 @@ const TutorProfile = () => {
                     <svg className="w-5 h-5 text-indigo-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span className="text-gray-700">{qualification}</span>
-                  </li>
-                ))}
-              </ul>
-              
-              <h4 className="text-xl font-medium text-gray-900 mb-4">Notable Achievements</h4>
-              <ul className="space-y-3">
-                {tutor.achievements.map((achievement, index) => (
-                  <li key={index} className="flex items-start">
-                    <svg className="w-5 h-5 text-amber-500 mr-3 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.83.602-1.816-.202-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                    <span className="text-gray-700">{achievement}</span>
+                    <span className="text-gray-700">
+                      {qualification.qualification} from {qualification.institution} ({qualification.year})
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
-            
+
             {/* Reviews Section */}
-            <div className="bg-white rounded-xl shadow-sm p-8">
-              <div className="flex justify-between items-center mb-6 pb-2 border-b border-gray-100">
-                <h3 className="text-2xl font-serif font-bold text-gray-900">Student Reviews</h3>
-                <div className="flex items-center">
-                  <svg className="w-5 h-5 text-amber-400 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span className="text-gray-900 font-medium">{tutor.rating}</span>
-                  <span className="text-gray-500 ml-1">({tutor.reviews} reviews)</span>
-                </div>
-              </div>
-              
-              <div className="space-y-6">
-                {reviews.map(review => (
-                  <div key={review.id} className="border-b border-gray-100 pb-6 last:border-0 last:pb-0">
-                    <div className="flex justify-between items-start mb-2">
-                      <h4 className="font-medium text-gray-900">{review.student}</h4>
-                      <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-4 h-4 ${i < review.rating ? 'text-amber-400' : 'text-gray-300'}`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                    </div>
-                    <p className="text-gray-500 text-sm mb-2">{review.date}</p>
-                    <p className="text-gray-700">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-              
-              <button className="mt-6 text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
-                View all reviews
-                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </button>
-            </div>
-          </div>
           
+          </div>
+
           {/* Right Column */}
           <div className="lg:w-1/3">
-            {/* Availability Section */}
-            <div className="bg-white rounded-xl shadow-sm p-8 mb-8 sticky top-8">
+            
+            {/* <div className="bg-white rounded-xl shadow-sm p-8 mb-8 sticky top-8">
               <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Availability</h3>
-              
+
               <div className="space-y-4">
-                {tutor.availability.map((slot, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <span className="font-medium text-gray-700">{slot.day}</span>
-                    <span className="text-gray-500">{slot.time}</span>
-                  </div>
-                ))}
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Monday</span>
+                  <span className="text-gray-500">4:00 PM - 8:00 PM</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Wednesday</span>
+                  <span className="text-gray-500">4:00 PM - 8:00 PM</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Friday</span>
+                  <span className="text-gray-500">4:00 PM - 8:00 PM</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-gray-700">Saturday</span>
+                  <span className="text-gray-500">10:00 AM - 2:00 PM</span>
+                </div>
               </div>
-              
+
               <button className="mt-6 w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 Check Full Calendar
               </button>
-              
+
               <div className="mt-8 pt-6 border-t border-gray-100">
                 <h4 className="text-lg font-medium text-gray-900 mb-4">Teaches</h4>
                 <div className="flex flex-wrap gap-2">
-                  {tutor.classLevels.map((level, index) => (
+                  {['Class 9', 'Class 10', 'Class 11', 'Class 12'].map((level, index) => (
                     <span key={index} className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm">
                       {level}
                     </span>
                   ))}
                 </div>
               </div>
-            </div>
-            
-            {/* Contact Section */}
+            </div> */}
+
+           
             <div className="bg-white rounded-xl shadow-sm p-8">
               <h3 className="text-2xl font-serif font-bold text-gray-900 mb-6 pb-2 border-b border-gray-100">Contact Tutor</h3>
-              
+
               <div className="space-y-4">
-                <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                {/* <button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                   Send Message
-                </button>
-                
-                <button className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center">
+                </button> */}
+
+                {/* Book Trial Session button */}
+                <button
+                  onClick={openBookingModal}
+                  className="w-full bg-amber-500 hover:bg-amber-600 text-white font-medium py-3 rounded-lg shadow-md transition duration-300 flex items-center justify-center"
+                >
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
                   Book Trial Session
                 </button>
-                
+
                 <div className="pt-4 mt-4 border-t border-gray-100">
                   <h4 className="text-lg font-medium text-gray-900 mb-3">Share Profile</h4>
                   <div className="flex space-x-3">
@@ -330,9 +364,9 @@ const TutorProfile = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-          <Link to="/find-tutors" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
+          <Link to="/findtutors" className="text-indigo-600 hover:text-indigo-800 font-medium flex items-center">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
@@ -340,6 +374,18 @@ const TutorProfile = () => {
           </Link>
         </div>
       </div>
+
+      {/* Booking Modal */}
+      {tutor && (
+        <BookingModal
+          showBookingModal={showBookingModal}
+          selectedTutor={tutor} // Pass the entire tutor object
+          bookingForm={bookingForm}
+          closeBookingModal={closeBookingModal}
+          handleBookingSubmit={handleBookingSubmit}
+          handleBookingFormChange={handleBookingFormChange}
+        />
+      )}
     </div>
   );
 };
