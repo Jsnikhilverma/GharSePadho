@@ -182,7 +182,7 @@ const navigateToStudentsPage = () => {
                     disabled={isLoadingStates}
                   >
                     <option value="">Select State</option>
-                    {states.map((state) => (
+                    {states?.map((state) => (
                       <option key={state.id} value={state.id}>
                         {state.state_name}
                       </option>
@@ -251,7 +251,7 @@ const navigateToStudentsPage = () => {
                     disabled={!selectedStateId || isLoadingCities}
                   >
                     <option value="">Select City</option>
-                    {cities.map((city) => (
+                    {cities?.map((city) => (
                       <option key={city.id} value={city.id}>
                         {city.city_name}
                       </option>
@@ -320,7 +320,7 @@ const navigateToStudentsPage = () => {
                     disabled={!selectedCityId || isLoadingAreas}
                   >
                     <option value="">Select Area</option>
-                    {areas.map((area) => (
+                    {areas?.map((area) => (
                       <option key={area.id} value={area.id}>
                         {area.area_name}
                       </option>

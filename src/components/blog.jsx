@@ -29,7 +29,7 @@ const EdutechBlogPlatform = () => {
   useEffect(() => {
     const fetchBlogs = async () => {
       try {
-        const response = await fetch('https://gharsepadho.com/gsp_api/public/index.php/get_blog_posts', {
+        const response = await fetch(`${import.meta.env.VITE_BASE_URL}/public/index.php/get_blog_posts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded',

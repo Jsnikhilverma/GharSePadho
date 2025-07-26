@@ -48,7 +48,7 @@ const BookingModal = ({
   const fetchStates = async () => {
     setLoadingStates(true);
     try {
-      const response = await axios.post('https://gharsepadho.com/gsp_api/public/index.php/get_states');
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/public/index.php/get_states`);
       if (response.data.status === 200) {
         setStates(response.data.msg);
       }
@@ -63,7 +63,7 @@ const BookingModal = ({
   const fetchCourses = async () => {
     setLoadingCourses(true);
     try {
-      const response = await axios.post('https://gharsepadho.com/gsp_api/public/index.php/get_courses');
+      const response = await axios.post(`${import.meta.env.VITE_BASE_URL}/public/index.php/get_courses`);
       if (response.data.status === 200) {
         setCourses(response.data.msg);
       }
@@ -82,7 +82,7 @@ const BookingModal = ({
       formData.append('course', courseId);
       
       const response = await axios.post(
-        'https://gharsepadho.com/gsp_api/public/index.php/get_subjects',
+        `${import.meta.env.VITE_BASE_URL}/public/index.php/get_subjects`,
         formData
       );
       
@@ -104,7 +104,7 @@ const BookingModal = ({
       formData.append('state', stateId);
       
       const response = await axios.post(
-        'https://gharsepadho.com/gsp_api/public/index.php/get_cities',
+        `${import.meta.env.VITE_BASE_URL}/public/index.php/get_cities`,
         formData
       );
       
@@ -126,7 +126,7 @@ const BookingModal = ({
       formData.append('city', cityId);
       
       const response = await axios.post(
-        'https://gharsepadho.com/gsp_api/public/index.php/get_city_area',
+        `${import.meta.env.VITE_BASE_URL}/public/index.php/get_city_area`,
         formData
       );
       
@@ -196,40 +196,122 @@ const BookingModal = ({
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setSubmitting(true);
+  setError(null);
+  
+  try {
+    const submitFormData = new FormData();
     
-    try {
-      const submitFormData = new FormData();
-      // Append all form data to FormData object
-      Object.entries(formData).forEach(([key, value]) => {
-        if (value) submitFormData.append(key, value);
-      });
-      
-      const response = await axios.post(
-        'https://gharsepadho.com/gsp_api/public/index.php/save_enquiry',
-        submitFormData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
-      
-      if (response.data.status === 200) {
-        setSubmitSuccess(true);
-      } else {
-        setError(response.data.msg || 'Submission failed. Please try again.');
+    // Append all form data to FormData object
+      submitFormData.append('name', formData.name);
+      submitFormData.append('email', formData.email);
+      submitFormData.append('mobile', formData.mobile);
+      // submitFormData.append('mode', formData.mode);
+
+      // Append mode_name based on mode value
+      let modeName = '';
+      if (formData.mode === '1') modeName = 'Online';
+      else if (formData.mode === '2') modeName = 'Offline';
+      else if (formData.mode === '3') modeName = 'Both';
+      if (modeName) {
+        submitFormData.append('mode', modeName);
       }
-    } catch (err) {
-      console.error('Error submitting form:', err);
-      setError('An error occurred. Please try again.');
-    } finally {
-      setSubmitting(false);
+      
+    
+    // Find and append names for IDs
+    if (formData.course) {
+      const selectedCourse = courses.find(c => c.id == formData.course);
+      if (selectedCourse) {
+        submitFormData.append('course_name', selectedCourse.class_name);
+      }
     }
-  };
+    
+    if (formData.subject) {
+      const selectedSubject = subjects.find(s => s.id == formData.subject);
+      if (selectedSubject) {
+        submitFormData.append('subject_name', selectedSubject.subject_name);
+      }
+    }
+    
+    if (formData.state) {
+      const selectedState = states.find(s => s.id == formData.state);
+      if (selectedState) {
+        submitFormData.append('state_name', selectedState.state_name);
+      }
+    }
+    
+    if (formData.city) {
+      const selectedCity = cities.find(c => c.id == formData.city);
+      if (selectedCity) {
+        submitFormData.append('city_name', selectedCity.city_name);
+      }
+    }
+    
+    if (formData.area) {
+      const selectedArea = areas.find(a => a.id == formData.area);
+      if (selectedArea) {
+        submitFormData.append('area_name', selectedArea.area_name);
+      }
+    }
+    
+    // Add tutor information
+    // submitFormData.append('tutor_id', selectedTutor.id);
+    // submitFormData.append('tutor_name', selectedTutor.name);
+    
+    const response = await axios.post(
+      `${import.meta.env.VITE_BASE_URL}/public/index.php/save_enquiry`,
+      submitFormData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+    );
+    
+    if (response.data.status === 200) {
+      setSubmitSuccess(true);
+      setFormData({
+        course: '',
+        subject: '',
+        name: '',
+        email: '',
+        mobile: '',
+        state: '',
+        city: '',
+        area: '',
+        mode: '',
+        message: ''
+      });
+      setStates([]);
+      setCities([]);
+      setAreas([]);
+      setCourses([]);
+      setSubjects([]);
+      // Reset loading states
+      setLoadingStates(false);
+      setLoadingCities(false);
+      setLoadingAreas(false);
+      setLoadingCourses(false);
+      setLoadingSubjects(false);
+      setError(null);
+      // Close modal after successful submission
+      setTimeout(() => {
+        closeBookingModal();
+        setSubmitSuccess(false);
+      }, 2000);
+
+    } else {
+      setError(response.data.msg || 'Submission failed. Please try again.');
+    }
+  } catch (err) {
+    console.error('Error submitting form:', err);
+    setError('An error occurred. Please try again.');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   if (!showBookingModal || !selectedTutor) return null;
 
@@ -369,7 +451,7 @@ const BookingModal = ({
                       disabled={loadingCourses}
                     >
                       <option value="">{loadingCourses ? 'Loading...' : 'Select Course'}</option>
-                      {courses.map(course => (
+                      {courses?.map(course => (
                         <option key={course.id} value={course.id}>{course.class_name}</option>
                       ))}
                     </select>
@@ -388,7 +470,7 @@ const BookingModal = ({
                       disabled={!formData.course || loadingSubjects}
                     >
                       <option value="">{loadingSubjects ? 'Loading...' : 'Select Subject'}</option>
-                      {subjects.map(subject => (
+                      {subjects?.map(subject => (
                         <option key={subject.id} value={subject.id}>{subject.subject_name}</option>
                       ))}
                     </select>
@@ -407,7 +489,7 @@ const BookingModal = ({
                       disabled={loadingStates}
                     >
                       <option value="">Select State</option>
-                      {states.map(state => (
+                      {states?.map(state => (
                         <option key={state.id} value={state.id}>{state.state_name}</option>
                       ))}
                     </select>
@@ -426,7 +508,7 @@ const BookingModal = ({
                       disabled={!formData.state || loadingCities}
                     >
                       <option value="">{loadingCities ? 'Loading...' : 'Select City'}</option>
-                      {cities.map(city => (
+                      {cities?.map(city => (
                         <option key={city.id} value={city.id}>{city.city_name}</option>
                       ))}
                     </select>
@@ -445,7 +527,7 @@ const BookingModal = ({
                       disabled={!formData.city || loadingAreas}
                     >
                       <option value="">{loadingAreas ? 'Loading...' : 'Select Area'}</option>
-                      {areas.map(area => (
+                      {areas?.map(area => (
                         <option key={area.id} value={area.id}>{area.area_name}</option>
                       ))}
                     </select>

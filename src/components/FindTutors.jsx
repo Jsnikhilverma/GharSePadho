@@ -40,8 +40,8 @@ const FindTutors = () => {
 
         if (filters.state || filters.city || filters.area) {
           // Fetch by location
-          url = "https://gharsepadho.com/gsp_api/public/index.php/get_teacher_by_location";
-          
+          url = `${import.meta.env.VITE_BASE_URL}/public/index.php/get_teacher_by_location`;
+
           const formData = new FormData();
           if (filters.state) formData.append("state", filters.state);
           if (filters.city) formData.append("city", filters.city);
@@ -51,20 +51,9 @@ const FindTutors = () => {
             method: "POST",
             body: formData
           };
-        } else if (filters.subject) {
-          // Fetch by subject
-          url = `http://127.0.0.1:8080/tuition_api/api/teachers/get_by_subject.php?subject=${encodeURIComponent(
-            filters.subject
-          )}`;
-          options = {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          };
-        } else {
+        }  else {
           // Fetch all tutors
-          url = "https://gharsepadho.com/gsp_api/public/index.php/get_teacher_details";
+          url = `${import.meta.env.VITE_BASE_URL}/public/index.php/get_teacher_details`;
           const formData = new FormData();
           formData.append("teacher_id", "all");
           options = {
